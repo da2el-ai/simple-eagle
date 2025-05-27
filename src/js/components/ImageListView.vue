@@ -1,5 +1,31 @@
 <template>
   <div class="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-6">
+    <!-- 子フォルダーボタン -->
+    <div 
+      v-for="childFolder in childFolders" 
+      :key="`folder-${childFolder.id}`" 
+      class="relative aspect-square"
+    >
+      <div
+        class="w-full h-full bg-blue-50 rounded overflow-hidden relative cursor-pointer hover:bg-blue-100 transition-colors flex flex-col items-center justify-center"
+        @click="handleFolderClick(childFolder.id)"
+      >
+        <!-- フォルダーアイコン -->
+        <div class="text-blue-500 text-2xl mb-2">📁</div>
+        
+        <!-- フォルダー名 -->
+        <span class="text-xs text-blue-700 text-center px-2 truncate w-full">
+          {{ childFolder.name }}
+        </span>
+        
+        <!-- 画像数 -->
+        <span class="text-xs text-blue-500 mt-1">
+          ({{ childFolder.imageCount }})
+        </span>
+      </div>
+    </div>
+
+    <!-- 画像リスト -->
     <div v-for="image in images" :key="image.id" class="relative aspect-square">
       <div
         :class="[
@@ -10,7 +36,7 @@
         @click="isClickableImage(image) ? handleImageClick(image) : null"
       >
         <img
-          :src="`/api/eagle/get_thumbnail_image?id=${image.id}`"
+          :src="`${ApiBaseUrl}/get_thumbnail_image?id=${image.id}`"
           :alt="image.name"
           class="w-full h-full object-cover"
           loading="lazy"
@@ -25,18 +51,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useEagleApi } from '../composables/useEagleApi'
+import { API_BASE_URL } from '../composables/useSettings';
+import type { TImageItem, TFolderItem } from '../composables/useEagleApi'
 
-import type { TImageItem } from '../composables/useEagleApi'
+const props = defineProps<{
+  folderId?: string
+}>()
+
+const emit = defineEmits<{
+  'image-click': [image: TImageItem]
+  'folder-click': [folderId: string]
+}>()
 
 const eagleApi = useEagleApi()
 const images = ref<TImageItem[]>([])
+const allFolders = ref<TFolderItem[]>([])
 
-// イベントの定義
-const emit = defineEmits<{
-  'image-click': [image: TImageItem]
-}>()
+const ApiBaseUrl = computed(() => {
+  return API_BASE_URL;
+})
+
+// 現在のフォルダーの子フォルダーを取得
+const childFolders = computed(() => {
+  // if (!props.folderId) {
+  //   // ルートレベルの場合、トップレベルフォルダーを返す
+  //   return allFolders.value
+  // }
+  
+  // 指定されたフォルダーIDの子フォルダーを検索
+  const findChildren = (folders: TFolderItem[], targetId: string): TFolderItem[] => {
+    for (const folder of folders) {
+      if (folder.id === targetId) {
+        return folder.children || []
+      }
+      if (folder.children && folder.children.length > 0) {
+        const result = findChildren(folder.children, targetId)
+        if (result.length > 0) {
+          return result
+        }
+      }
+    }
+    return []
+  }
+  
+  return props.folderId ? findChildren(allFolders.value, props.folderId) : []
+})
 
 // クリック可能な画像かどうかを判定
 const isClickableImage = (image: TImageItem): boolean => {
@@ -49,12 +110,33 @@ const handleImageClick = (image: TImageItem) => {
   emit('image-click', image)
 }
 
-const handleImageError = (image: TImageItem) => {
-  console.error('Failed to load image:', image.name)
+// フォルダークリック時の処理
+const handleFolderClick = (folderId: string) => {
+  emit('folder-click', folderId)
 }
 
-onMounted(async () => {
-  console.log('ImageList component mounted')
-  images.value = await eagleApi.getRecentImages()
+const handleImageError = (image: TImageItem) => {
+  console.error('Failed to load image:', image.name, image)
+}
+
+// 画像を読み込む
+const loadImages = async () => {
+  images.value = await eagleApi.getRecentImages(100, props.folderId)
+}
+
+// フォルダー一覧を読み込む
+const loadFolders = async () => {
+  allFolders.value = await eagleApi.getFolders()
+}
+
+// フォルダーIDが変更されたら画像を再読み込み
+watch(() => props.folderId, () => {
+  // console.log("[ImageListVIew] watch folderId", props.folderId);
+  loadImages()
+})
+
+onMounted(() => {
+  loadImages()
+  loadFolders()
 })
 </script>

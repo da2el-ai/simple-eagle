@@ -1,23 +1,32 @@
 <template>
   <div class="container mx-auto p-4">
-    <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-bold mb-4">Simple Eagle</h1>
-      <!-- 歯車ボタン（設定画面を開く） -->
-      <button
-        @click="showSettings = true"
-        class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors"
-        title="設定"
-      >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-        </svg>
-      </button>
-    </div>
-    <ImageListView @image-click="openLightbox" />
+    <header class="flex flex-wrap justify-between items-center mb-4">
+      <div class="flex items-center gap-4">
+        <!-- フォルダビュー表示ボタン -->
+        <HamburgerButton @click="showFolderList = true" />
+
+        <!-- タイトル -->
+        <h1 class="text-2xl font-bold">Simple Eagle</h1>
+      </div>
+
+      <!-- 設定ボタン -->
+      <SettingButton @click="showSettings = true" />
+
+      <Breadcrumb 
+        :current-folder-id="currentFolderId" 
+        @folder-select="handleFolderSelect"
+      />
+    </header>
+
+    <!-- 画像一覧表示 -->
+    <ImageListView 
+      @image-click="openLightbox" 
+      @folder-click="handleFolderSelect"
+      :folder-id="currentFolderId" 
+    />
     
     <!-- 設定モーダル -->
-    <ModalView v-if="showSettings" @close="showSettings = false" :showCloseButton="false">
+    <ModalView v-if="showSettings" @close="showSettings = false" :showCloseButton="false" :fit-height="true">
       <Dialog @close="showSettings = false">
         <SettingView @close="showSettings = false" />
       </Dialog>
@@ -27,6 +36,12 @@
     <ModalView v-if="showLightbox && selectedImage" @close="closeLightbox" :showCloseButton="true">
       <Lightbox :image="selectedImage" @close="closeLightbox" />
     </ModalView>
+
+    <!-- フォルダー一覧モーダル -->
+    <FolderTreeView
+      v-model:isOpen="showFolderList"
+      @select="handleFolderSelect"
+    />
   </div>
 </template>
 
@@ -37,14 +52,22 @@ import ModalView from './components/ModalView.vue'
 import Dialog from './components/Dialog.vue'
 import SettingView from './components/SettingView.vue'
 import Lightbox from './components/Lightbox.vue'
+import HamburgerButton from './components/HamburgerButton.vue'
+import FolderTreeView from './components/FolderTreeView.vue'
+import SettingButton from './components/SettingButton.vue'
+import Breadcrumb from './components/Breadcrumb.vue'
 import type { TImageItem } from './composables/useEagleApi'
 
-// 設定画面の表示状態
+// モーダルの表示状態
 const showSettings = ref(false)
+const showFolderList = ref(false)
 
 // Lightboxの表示状態
 const showLightbox = ref(false)
 const selectedImage = ref<TImageItem | null>(null)
+
+// 現在選択中のフォルダー
+const currentFolderId = ref<string | undefined>()
 
 // Lightboxを開く
 const openLightbox = (image: TImageItem) => {
@@ -57,4 +80,11 @@ const closeLightbox = () => {
   showLightbox.value = false
   selectedImage.value = null
 }
+
+// フォルダー選択時の処理（BreadcrumbとFolderTreeViewから）
+const handleFolderSelect = (folderId: string | null) => {
+  // console.log("handleFolderSelect", folderId)
+  currentFolderId.value = folderId || undefined
+}
+
 </script>

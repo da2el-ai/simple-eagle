@@ -15,7 +15,7 @@
     />
     
     <!-- モーダルコンテンツエリア -->
-    <div class="c-modal__container relative w-full h-full flex flex-col items-center overflow-y-auto">
+    <div :class="`c-modal__container relative ${fitWidth ? 'w-fit' : 'w-full'} ${fitHeight ? '' : 'h-full'} flex flex-col items-center overflow-y-auto`">
       <!-- スロット（複数の要素を配置可能） -->
       <slot></slot>
     </div>
@@ -27,11 +27,15 @@ import CloseButton from './CloseButton.vue'
 
 // プロパティの定義
 type TModalViewProps = {
-  showCloseButton?: boolean
+  showCloseButton?: boolean,
+  fitWidth?: boolean,
+  fitHeight?: boolean,
 }
 
 withDefaults(defineProps<TModalViewProps>(), {
-  showCloseButton: true
+  showCloseButton: true,
+  fitWidth: false,
+  fitHeight: false,
 })
 
 // イベントの定義

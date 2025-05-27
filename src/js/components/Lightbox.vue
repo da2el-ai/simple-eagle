@@ -3,7 +3,7 @@
     <section>
 
         <div class="">
-            <img :src="`/api/eagle/get_image?id=${image.id}&ext=${image.ext}&max_file_size=${settings.getMaxFileSize()}&quality=${settings.getQuality()}`"
+            <img :src="`${API_BASE_URL}/get_image?id=${image.id}&ext=${image.ext}&max_file_size=${settings.getMaxFileSize()}&quality=${settings.getQuality()}`"
                 :alt="image.name" class="max-w-full max-h-full object-contain" />
         </div>
 
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSettings } from '../composables/useSettings'
+import { useSettings, API_BASE_URL } from '../composables/useSettings'
 import Dialog from './Dialog.vue'
 import type { TImageItem } from '../composables/useEagleApi'
 

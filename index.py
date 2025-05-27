@@ -18,12 +18,15 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 @api_router.get("/recent")
-async def get_recent_images():
+async def get_recent_images(limit: int = 100, folder_id: str = None):
     """
     Eagle APIから最新の画像一覧を取得
+    Args:
+        limit (int): 取得する画像の最大数（デフォルト: 100）
+        folder_id (str, optional): 指定されたフォルダーIDの画像のみを取得
     """
     try:
-        return eagle_api.get_recent_images()
+        return eagle_api.get_recent_images(limit=limit, folder_id=folder_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

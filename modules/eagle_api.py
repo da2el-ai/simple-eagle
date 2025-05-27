@@ -3,6 +3,7 @@ import json
 import os
 from urllib.parse import unquote
 from .util import load_image
+from .debug_logger import debug_print
 
 
 # デバッグモード（環境変数で制御）
@@ -15,31 +16,40 @@ class EagleApi:
     def __init__(self):
         self.base_url = 'http://localhost:41595'
 
-    def get_recent_images(self, limit=100):
+    def get_recent_images(self, limit=100, folder_id=None):
         """
         最新の画像一覧を取得
+        Args:
+            limit (int): 取得する画像の最大数
+            folder_id (str, optional): 指定されたフォルダーIDの画像のみを取得
         """
         try:
-            print(f"Requesting recent images from Eagle API with limit: {limit}")
-            response = requests.get(f'{self.base_url}/api/item/list?limit={limit}')
+            # URLパラメータを構築
+            params = f'limit={limit}'
+            if folder_id:
+                params += f'&folders={folder_id}'
+            
+            url = f'{self.base_url}/api/item/list?{params}'
+            debug_print(f"Requesting recent images from Eagle API with limit: {limit}, folder_id: {folder_id}")
+            response = requests.get(url)
             response.raise_for_status()
             data = response.json()
-            print(f"Eagle API response received. Status: {response.status_code}")
+            debug_print(f"Eagle API response received. Status: {response.status_code}")
 
             if 'data' in data and isinstance(data['data'], list):
                 if DEBUG:
-                    print(f"DEBUG MODE: Limiting results to {DEBUG_LIMIT} items")
+                    debug_print(f"DEBUG MODE: Limiting results to {DEBUG_LIMIT} items")
                     data['data'] = data['data'][:DEBUG_LIMIT]
-                print(f"Processing {len(data['data'])} items")
+                debug_print(f"Processing {len(data['data'])} items")
             else:
-                print("Unexpected data structure:", data)
+                debug_print("Unexpected data structure:", data)
 
             return data
         except requests.exceptions.RequestException as e:
             error_msg = f"Eagle API error: {str(e)}"
-            print(error_msg)
+            debug_print(error_msg)
             if hasattr(response, 'text'):
-                print(f"Response content: {response.text}")
+                debug_print(f"Response content: {response.text}")
             return {"status": "error", "message": error_msg}
 
     def get_folder_list(self):
@@ -49,7 +59,7 @@ class EagleApi:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Eagle API error: {e}")
+            debug_print(f"Eagle API error: {e}")
             return {"status": "error", "message": str(e)}
 
     def get_thumbnail_image(self, image_id):
@@ -67,11 +77,11 @@ class EagleApi:
                 # ローカルファイルパスから画像を読み込む
                 return load_image(decoded_path)
             else:
-                print(f"Unexpected response: {data}")
+                debug_print(f"Unexpected response: {data}")
                 return None
                 
         except (requests.exceptions.RequestException, IOError) as e:
-            print(f"Error getting thumbnail image: {e}")
+            debug_print(f"Error getting thumbnail image: {e}")
             return None
 
     def get_image(self, image_id, ext="png", max_file_size=MAX_FILE_SIZE, quality=QUALITY):
@@ -99,11 +109,11 @@ class EagleApi:
                 # ローカルファイルパスから画像を読み込む
                 return load_image(original_path, max_file_size, quality)
             else:
-                print(f"Unexpected response: {data}")
+                debug_print(f"Unexpected response: {data}")
                 return None
                 
         except (requests.exceptions.RequestException, IOError) as e:
-            print(f"Error getting image: {e}")
+            debug_print(f"Error getting image: {e}")
             return None
 
 
@@ -117,7 +127,7 @@ class EagleApi:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Error getting image detail: {e}")
+            debug_print(f"Error getting image detail: {e}")
             return None
 
 eagle_api = EagleApi()

@@ -10,6 +10,8 @@ IF NOT EXIST "venv" (
 )
 
 echo Setting debug mode...
+REM デバッグモードを有効にするには下記の行のコメントアウトを外してください
+REM set EAGLE_DEBUG=true
 set EAGLE_DEBUG=false
 
 echo Starting server...

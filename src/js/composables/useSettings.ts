@@ -6,6 +6,8 @@ export type TSettings = {
   quality: number | null
 }
 
+const API_BASE_URL = '/api/eagle';
+
 // デフォルト設定値
 const DEFAULT_SETTINGS = {
   max_file_size: 768,
@@ -14,6 +16,9 @@ const DEFAULT_SETTINGS = {
 
 // localStorage のキー
 const STORAGE_KEY = 'eagle_viewer_settings'
+
+
+export { API_BASE_URL };
 
 export function useSettings() {
   // 設定データ
