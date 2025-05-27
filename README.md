@@ -36,6 +36,8 @@ git clone https://github.com/da2el-ai/simple-eagle.git
 
 ## 実行
 
+あらかじめEagleを起動しておく必要があります。
+
 ### Windows で使う
 
 ```
