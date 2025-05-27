@@ -1,5 +1,8 @@
 import base64
 import os
+import hashlib
+import time
+from datetime import datetime, timedelta
 from PIL import Image, ImageFile
 import io
 from .debug_logger import debug_print
@@ -7,6 +10,97 @@ from .debug_logger import debug_print
 # PILの画像サイズ制限を緩和（decompression bomb対策を無効化）
 Image.MAX_IMAGE_PIXELS = None
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+# キャッシュディレクトリ
+CACHE_DIR = "cache"
+CACHE_EXPIRY_HOURS = 1
+
+def get_cache_key(path: str, max_file_size: int, quality: int) -> str:
+    """キャッシュキーを生成"""
+    # ファイルパス、最終更新時刻、パラメータからハッシュを生成
+    try:
+        mtime = os.path.getmtime(path)
+        key_string = f"{path}_{mtime}_{max_file_size}_{quality}"
+        return hashlib.md5(key_string.encode()).hexdigest()
+    except OSError:
+        # ファイルが存在しない場合
+        return None
+
+def get_cache_path(cache_key: str) -> str:
+    """キャッシュファイルのパスを取得"""
+    return os.path.join(CACHE_DIR, f"{cache_key}.cache")
+
+def is_cache_valid(cache_path: str) -> bool:
+    """キャッシュが有効かどうかチェック（1時間以内）"""
+    if not os.path.exists(cache_path):
+        return False
+    
+    try:
+        cache_time = datetime.fromtimestamp(os.path.getmtime(cache_path))
+        expiry_time = datetime.now() - timedelta(hours=CACHE_EXPIRY_HOURS)
+        return cache_time > expiry_time
+    except OSError:
+        return False
+
+def load_from_cache(cache_path: str):
+    """キャッシュからデータを読み込み"""
+    try:
+        with open(cache_path, 'rb') as f:
+            # 最初の4バイトでContent-Typeの長さを読み取り
+            content_type_length = int.from_bytes(f.read(4), byteorder='big')
+            # Content-Typeを読み取り
+            content_type = f.read(content_type_length).decode('utf-8')
+            # 残りが画像データ
+            content = f.read()
+            return content, content_type
+    except Exception as e:
+        debug_print(f"Error loading from cache {cache_path}: {e}")
+        return None
+
+def save_to_cache(cache_path: str, content: bytes, content_type: str):
+    """データをキャッシュに保存"""
+    try:
+        # キャッシュディレクトリを作成
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        
+        with open(cache_path, 'wb') as f:
+            # Content-Typeの長さを4バイトで書き込み
+            content_type_bytes = content_type.encode('utf-8')
+            f.write(len(content_type_bytes).to_bytes(4, byteorder='big'))
+            # Content-Typeを書き込み
+            f.write(content_type_bytes)
+            # 画像データを書き込み
+            f.write(content)
+        
+        debug_print(f"Saved to cache: {cache_path}")
+    except Exception as e:
+        debug_print(f"Error saving to cache {cache_path}: {e}")
+
+def cleanup_expired_cache():
+    """期限切れのキャッシュファイルを削除"""
+    if not os.path.exists(CACHE_DIR):
+        return
+    
+    try:
+        expiry_time = datetime.now() - timedelta(hours=CACHE_EXPIRY_HOURS)
+        deleted_count = 0
+        
+        for filename in os.listdir(CACHE_DIR):
+            if filename.endswith('.cache'):
+                cache_path = os.path.join(CACHE_DIR, filename)
+                try:
+                    cache_time = datetime.fromtimestamp(os.path.getmtime(cache_path))
+                    if cache_time <= expiry_time:
+                        os.remove(cache_path)
+                        deleted_count += 1
+                except OSError:
+                    # ファイルが削除できない場合はスキップ
+                    pass
+        
+        if deleted_count > 0:
+            debug_print(f"Cleaned up {deleted_count} expired cache files")
+    except Exception as e:
+        debug_print(f"Error during cache cleanup: {e}")
 
 # def detect_image_type(data: bytes) -> str:
 #     """
@@ -24,13 +118,18 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def load_image(path: str, max_file_size=0, quality=85):
     """
-    ローカルファイルパスから画像を読み込む
+    ローカルファイルパスから画像を読み込む（キャッシュ機能付き）
     - path: 画像パス
     - max_file_size: ファイルサイズがこの値より大きかったらjpeg圧縮をかける。0なら圧縮しない（KB単位）
     - quality: jpeg圧縮率
     - 戻り値: (バイナリデータ, Content-Type)のタプル
     """
     try:
+        # 期限切れキャッシュのクリーンアップ（たまに実行）
+        import random
+        if random.randint(1, 100) == 1:  # 1%の確率で実行
+            cleanup_expired_cache()
+        
         # ファイルサイズを事前にチェック
         file_size = os.path.getsize(path)
         file_size_kb = file_size / 1024
@@ -40,6 +139,26 @@ def load_image(path: str, max_file_size=0, quality=85):
         # 非常に大きいファイル（50MB以上）は処理を拒否
         if file_size > 50 * 1024 * 1024:  # 50MB
             raise ValueError(f"Image file too large: {file_size_kb:.2f}KB (max 50MB)")
+        
+        # 圧縮が必要な場合のみキャッシュを使用
+        should_compress = max_file_size > 0 and file_size_kb > max_file_size
+        cache_key = None
+        cache_path = None
+        
+        if should_compress:
+            # キャッシュキーを生成
+            cache_key = get_cache_key(path, max_file_size, quality)
+            if cache_key is None:
+                raise FileNotFoundError(f"Image file not found: {path}")
+            
+            cache_path = get_cache_path(cache_key)
+            
+            # キャッシュが有効な場合はキャッシュから読み込み
+            if is_cache_valid(cache_path):
+                cached_data = load_from_cache(cache_path)
+                if cached_data is not None:
+                    debug_print(f"Loaded from cache: {cache_path}")
+                    return cached_data
         
         # max_file_sizeが0でない場合、かつファイルサイズが制限を超える場合は圧縮
         if max_file_size > 0 and file_size_kb > max_file_size:
@@ -96,6 +215,10 @@ def load_image(path: str, max_file_size=0, quality=85):
             with open(path, 'rb') as image_file:
                 content = image_file.read()
             content_type = get_content_type_from_path(path)
+        
+        # 圧縮が実行された場合のみキャッシュに保存
+        if should_compress and cache_path is not None:
+            save_to_cache(cache_path, content, content_type)
         
         return content, content_type
         
