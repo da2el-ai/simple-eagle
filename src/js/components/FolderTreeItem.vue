@@ -59,7 +59,7 @@ const handleClick = () => {
   emit('select', props.folder.id)
 }
 
-const toggleOpen = () => {
-  isOpen.value = !isOpen.value
-}
+// const toggleOpen = () => {
+//   isOpen.value = !isOpen.value
+// }
 </script>

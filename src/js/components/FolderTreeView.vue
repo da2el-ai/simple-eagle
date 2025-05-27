@@ -24,8 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useEagleApi, type TFolderItem } from '../composables/useEagleApi'
+import { useEagleApi } from '../composables/useEagleApi'
 import ModalView from './ModalView.vue'
 import FolderTreeItem from './FolderTreeItem.vue'
 // import CloseButton from './CloseButton.vue'
@@ -40,7 +39,7 @@ const emit = defineEmits<{
 }>()
 
 const eagleApi = useEagleApi()
-const folders = ref<TFolderItem[]>([])
+const folders = eagleApi.getFoldersSync()
 const loading = eagleApi.isLoading()
 const error = eagleApi.getError()
 
@@ -53,7 +52,4 @@ const handleFolderSelect = (folderId: string) => {
   emit('update:isOpen', false)
 }
 
-onMounted(async () => {
-  folders.value = await eagleApi.getFolders()
-})
 </script>

@@ -12,7 +12,7 @@
       </button>
       
       <!-- パンくずの各階層 -->
-      <template v-for="(item, index) in breadcrumbPath" :key="item.id">
+      <template v-for="(item) in breadcrumbPath" :key="item.id">
         <span class="text-gray-300">></span>
         <button 
           @click="handleBreadcrumbClick(item.id)"
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed } from 'vue'
 import { useEagleApi, type TFolderItem } from '../composables/useEagleApi'
 
 const props = defineProps<{
@@ -45,7 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const eagleApi = useEagleApi()
-const folders = ref<TFolderItem[]>([])
+const folders = eagleApi.getFoldersSync()
 
 // フォルダーIDから親フォルダーまでのパスを取得する関数
 const findFolderPath = (folderId: string, folderList: TFolderItem[]): TFolderItem[] => {
@@ -77,13 +77,4 @@ const handleBreadcrumbClick = (folderId: string | null) => {
   emit('folderSelect', folderId)
 }
 
-// フォルダー一覧を取得
-onMounted(async () => {
-  folders.value = await eagleApi.getFolders()
-})
-
-// currentFolderIdが変更された時にフォルダー一覧を再取得（必要に応じて）
-watch(() => props.currentFolderId, () => {
-  // 必要に応じてフォルダー一覧を再取得
-})
 </script>

@@ -1,10 +1,28 @@
 <template>
 
-    <section>
+    <section class="relative">
 
-        <div class="">
+        <div class="relative">
             <img :src="`${API_BASE_URL}/get_image?id=${image.id}&ext=${image.ext}&max_file_size=${settings.getMaxFileSize()}&quality=${settings.getQuality()}`"
                 :alt="image.name" class="max-w-full max-h-full object-contain" />
+            
+            <!-- 左ナビゲーションエリア -->
+            <button 
+                v-if="canGoPrevious"
+                @click="goToPrevious"
+                class="absolute top-0 left-0 w-1/5 h-full bg-transparent active:bg-white active:bg-opacity-50 cursor-pointer z-10"
+            >
+                <span class="sr-only">前の画像</span>
+            </button>
+            
+            <!-- 右ナビゲーションエリア -->
+            <button 
+                v-if="canGoNext"
+                @click="goToNext"
+                class="absolute top-0 right-0 w-1/5 h-full bg-transparent active:bg-white active:bg-opacity-50 cursor-pointer z-10"
+            >
+                <span class="sr-only">次の画像</span>
+            </button>
         </div>
 
         <Dialog @close="$emit('close')" :showCloseButton="false">
@@ -64,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useSettings, API_BASE_URL } from '../composables/useSettings'
 import Dialog from './Dialog.vue'
 import type { TImageItem } from '../composables/useEagleApi'
@@ -71,12 +90,52 @@ import type { TImageItem } from '../composables/useEagleApi'
 // プロパティの定義
 type TLightboxProps = {
     image: TImageItem
+    images: TImageItem[]
 }
 
-defineProps<TLightboxProps>()
+const props = defineProps<TLightboxProps>()
+
+// エミット定義
+const emit = defineEmits<{
+    close: []
+    'image-change': [image: TImageItem]
+}>()
 
 // 設定を取得
 const settings = useSettings()
+
+
+// 現在の画像のインデックス
+const currentIndex = computed(() => {
+    return props.images.findIndex(img => img.id === props.image.id)
+})
+
+// 前の画像に移動可能かどうか
+const canGoPrevious = computed(() => {
+    return currentIndex.value > 0
+})
+
+// 次の画像に移動可能かどうか
+const canGoNext = computed(() => {
+    return currentIndex.value < props.images.length - 1
+})
+
+// 前の画像に移動
+const goToPrevious = () => {
+    if (canGoPrevious.value) {
+        const prevImage = props.images[currentIndex.value - 1]
+        emit('image-change', prevImage)
+    }
+}
+
+// 次の画像に移動
+const goToNext = () => {
+    if (canGoNext.value) {
+        const nextImage = props.images[currentIndex.value + 1]
+        emit('image-change', nextImage)
+    }
+}
+
 
 // ファイルサイズをフォーマット
 const formatFileSize = (bytes: number): string => {

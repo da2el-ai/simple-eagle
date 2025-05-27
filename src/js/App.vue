@@ -34,7 +34,12 @@
     
     <!-- Lightboxモーダル -->
     <ModalView v-if="showLightbox && selectedImage" @close="closeLightbox" :showCloseButton="true">
-      <Lightbox :image="selectedImage" @close="closeLightbox" />
+      <Lightbox 
+        :image="selectedImage" 
+        :images="currentImages"
+        @close="closeLightbox" 
+        @image-change="handleImageChange"
+      />
     </ModalView>
 
     <!-- フォルダー一覧モーダル -->
@@ -46,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import ImageListView from './components/ImageListView.vue'
 import ModalView from './components/ModalView.vue'
 import Dialog from './components/Dialog.vue'
@@ -57,6 +62,7 @@ import FolderTreeView from './components/FolderTreeView.vue'
 import SettingButton from './components/SettingButton.vue'
 import Breadcrumb from './components/Breadcrumb.vue'
 import type { TImageItem } from './composables/useEagleApi'
+import { useEagleApi } from './composables/useEagleApi'
 
 // モーダルの表示状態
 const showSettings = ref(false)
@@ -68,6 +74,12 @@ const selectedImage = ref<TImageItem | null>(null)
 
 // 現在選択中のフォルダー
 const currentFolderId = ref<string | undefined>()
+
+// EagleAPIインスタンス
+const eagleApi = useEagleApi()
+
+// 現在の画像リストを取得
+const currentImages = eagleApi.getImages()
 
 // Lightboxを開く
 const openLightbox = (image: TImageItem) => {
@@ -81,10 +93,36 @@ const closeLightbox = () => {
   selectedImage.value = null
 }
 
+// 画像変更時の処理
+const handleImageChange = (image: TImageItem) => {
+  selectedImage.value = image
+}
+
+// 画像リストを読み込む
+const loadImages = async () => {
+  await eagleApi.loadRecentImages(100, currentFolderId.value)
+}
+
+// フォルダーリストを読み込む
+const loadFolders = async () => {
+  await eagleApi.loadFolders()
+}
+
 // フォルダー選択時の処理（BreadcrumbとFolderTreeViewから）
 const handleFolderSelect = (folderId: string | null) => {
   // console.log("handleFolderSelect", folderId)
   currentFolderId.value = folderId || undefined
 }
+
+// フォルダーIDが変更されたら画像を再読み込み
+watch(() => currentFolderId.value, () => {
+  loadImages()
+})
+
+// 初期読み込み
+onMounted(() => {
+  loadFolders()
+  loadImages()
+})
 
 </script>

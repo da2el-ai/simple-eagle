@@ -33,6 +33,9 @@ class EagleApi {
   private loading = ref(false)
   private error = ref<string | null>(null)
   private folderOpenStates = ref<Record<string, boolean>>({})
+  private images = ref<TImageItem[]>([])
+  private folders = ref<TFolderItem[]>([])
+  private foldersLoading = ref(false)
 
   private constructor() {}
 
@@ -44,14 +47,14 @@ class EagleApi {
   }
 
   /**
-   * 最新の画像一覧を取得
+   * 最新の画像一覧を取得して内部に保存
    * @param limit 
-   * @returns 
+   * @param folderId 
    */
-  public async getRecentImages(limit: number = 100, folderId?: string): Promise<TImageItem[]> {
+  public async loadRecentImages(limit: number = 100, folderId?: string): Promise<void> {
     this.loading.value = true
     this.error.value = null
-    // console.log('[useEagleApi] getRecentImages', folderId);
+    // console.log('[useEagleApi] loadRecentImages', folderId);
 
     try {
       const url = new URL(`${API_BASE_URL}/recent`, window.location.origin)
@@ -73,17 +76,35 @@ class EagleApi {
       }
       if (!data.data) {
         console.warn('No data field in response:', data)
-        return [];
+        this.images.value = [];
+        return;
       }
       // console.log('Number of images received:', data.data.length)
-      return data.data || [];
+      this.images.value = data.data || [];
     } catch (err) {
-      console.error('Error in getRecentImages:', err)
+      console.error('Error in loadRecentImages:', err)
       this.error.value = err instanceof Error ? err.message : 'Unknown error occurred'
-      return [];
+      this.images.value = [];
     } finally {
       this.loading.value = false
     }
+  }
+
+  /**
+   * 最新の画像一覧を取得（後方互換性のため）
+   * @param limit 
+   * @returns 
+   */
+  public async getRecentImages(limit: number = 100, folderId?: string): Promise<TImageItem[]> {
+    await this.loadRecentImages(limit, folderId)
+    return this.images.value
+  }
+
+  /**
+   * 保存されている画像リストを取得
+   */
+  public getImages() {
+    return this.images
   }
 
 
@@ -142,10 +163,24 @@ class EagleApi {
   }
 
   /**
-   * フォルダー一覧を取得
+   * フォルダー一覧を取得して内部に保存
    */
-  public async getFolders(): Promise<TFolderItem[]> {
-    this.loading.value = true
+  public async loadFolders(): Promise<void> {
+    // 既に読み込み中の場合は待機
+    if (this.foldersLoading.value) {
+      // 読み込み完了まで待機
+      while (this.foldersLoading.value) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      return
+    }
+
+    // 既に読み込み済みの場合はスキップ
+    if (this.folders.value.length > 0) {
+      return
+    }
+
+    this.foldersLoading.value = true
     this.error.value = null
 
     try {
@@ -162,7 +197,8 @@ class EagleApi {
       }
       if (!data.data) {
         console.warn('No data field in response:', data)
-        return [];
+        this.folders.value = [];
+        return;
       }
 
       const folders = data.data;
@@ -184,16 +220,24 @@ class EagleApi {
         extendTags: []
       }
     
-      // 「全て」を先頭に追加して返す
-      return [allItem, ...folders]
+      // 「全て」を先頭に追加して保存
+      this.folders.value = [allItem, ...folders]
  
     } catch (err) {
-      console.error('Error in getFolders:', err)
+      console.error('Error in loadFolders:', err)
       this.error.value = err instanceof Error ? err.message : 'Unknown error occurred'
-      return [];
+      this.folders.value = [];
     } finally {
-      this.loading.value = false
+      this.foldersLoading.value = false
     }
+  }
+
+
+  /**
+   * 保存されているフォルダーリストを取得
+   */
+  public getFoldersSync() {
+    return this.folders
   }
 }
 
