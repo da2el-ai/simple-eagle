@@ -1,10 +1,8 @@
 <template>
-
     <section class="relative">
-
-        <div class="relative">
+        <figure class="relative text-center">
             <img :src="`${API_BASE_URL}/get_image?id=${image.id}&ext=${image.ext}&max_file_size=${settings.getMaxFileSize()}&quality=${settings.getQuality()}`"
-                :alt="image.name" class="max-w-full max-h-full object-contain" />
+                :alt="image.name" class="m-auto max-w-full max-h-full object-contain" />
             
             <!-- 左ナビゲーションエリア -->
             <button 
@@ -23,17 +21,24 @@
             >
                 <span class="sr-only">次の画像</span>
             </button>
-        </div>
+        </figure>
 
         <Dialog @close="$emit('close')" :showCloseButton="false">
             <!-- 画像情報パネル -->
             <div>
-                <h3 class="text-lg font-semibold mb-4 text-gray-900">画像情報</h3>
+                <!-- 評価 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">評価</label>
+                    <StarRating
+                        v-model="currentRating"
+                        @change="updateRating"
+                    />
+                </div>
 
                 <!-- 画像名 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">ファイル名</label>
-                    <p class="text-sm text-gray-900 break-words">{{ image.name }}</p>
+                    <p class="text-sm text-gray-900">{{ image.name }}</p>
                 </div>
 
                 <!-- フォルダ -->
@@ -75,17 +80,18 @@
                     </div>
                 </div>
             </div>
-
         </Dialog>
     </section>
-
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useSettings, API_BASE_URL } from '../composables/useSettings'
+import { computed, ref, watch } from 'vue'
+import { API_BASE_URL } from '../env'
+import { useSettings } from '../composables/useSettings'
+import { useEagleApi } from '../composables/useEagleApi'
 import Dialog from './Dialog.vue'
-import type { TImageItem } from '../composables/useEagleApi'
+import StarRating from './StarRating.vue'
+import type { TImageItem } from '../types';
 
 // プロパティの定義
 type TLightboxProps = {
@@ -101,9 +107,33 @@ const emit = defineEmits<{
     'image-change': [image: TImageItem]
 }>()
 
-// 設定を取得
+// サービスの取得
 const settings = useSettings()
+const eagleApi = useEagleApi()
 
+// 評価の状態管理
+const currentRating = ref(props.image.star || 0)
+
+// 評価値の更新とAPI呼び出し
+const updateRating = async (rating: number) => {
+    const oldRating = currentRating.value
+    
+    try {
+        // APIを呼び出して更新
+        await eagleApi.updateItem(props.image.id, {
+            star: rating
+        })
+    } catch (error) {
+        // エラーが発生した場合、評価値を元に戻す
+        currentRating.value = oldRating
+        console.error('評価の更新に失敗しました:', error)
+    }
+}
+
+// 画像が変更されたときに評価値を更新
+watch(() => props.image, (newImage) => {
+    currentRating.value = newImage.star || 0
+}, { immediate: true })
 
 // 現在の画像のインデックス
 const currentIndex = computed(() => {
@@ -135,7 +165,6 @@ const goToNext = () => {
         emit('image-change', nextImage)
     }
 }
-
 
 // ファイルサイズをフォーマット
 const formatFileSize = (bytes: number): string => {

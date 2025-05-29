@@ -1,32 +1,6 @@
 import { ref } from 'vue'
-import { API_BASE_URL } from './useSettings';
-
-export type TFolderItem = {
-  id: string
-  name: string
-  description: string
-  children: TFolderItem[]
-  modificationTime: number
-  tags: string[]
-  imageCount: number
-  descendantImageCount: number
-  pinyin: string
-  extendTags: string[]
-}
-
-export type TImageItem = {
-  id: string
-  name: string
-  size: number
-  ext: string
-  tags: string[]
-  folders: string[]
-  annotation: string
-  width: number
-  height: number
-  modificationTime: number
-  lastModified: number
-}
+import { API_BASE_URL } from '../env'
+import type { TImageItem, TFolderItem } from '../types';
 
 class EagleApi {
   private static instance: EagleApi
@@ -238,6 +212,54 @@ class EagleApi {
    */
   public getFoldersSync() {
     return this.folders
+  }
+
+  /**
+   * 画像情報を更新する
+   * @param itemId 画像のID
+   * @param data 更新データ（tags, annotation, url, star）
+   */
+  public async updateItem(itemId: string, data: {
+    tags?: string[];
+    annotation?: string;
+    url?: string;
+    star?: number;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: itemId,
+          ...data
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.status === 'error') {
+        throw new Error(result.message);
+      }
+
+      // 成功した場合、現在のimages配列内の該当アイテムも更新
+      const index = this.images.value.findIndex(img => img.id === itemId);
+      if (index !== -1) {
+        this.images.value[index] = {
+          ...this.images.value[index],
+          ...data
+        };
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error updating item:', error);
+      throw error;
+    }
   }
 }
 

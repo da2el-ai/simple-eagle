@@ -61,7 +61,7 @@ import HamburgerButton from './components/HamburgerButton.vue'
 import FolderTreeView from './components/FolderTreeView.vue'
 import SettingButton from './components/SettingButton.vue'
 import Breadcrumb from './components/Breadcrumb.vue'
-import type { TImageItem } from './composables/useEagleApi'
+import type { TImageItem } from './types'
 import { useEagleApi } from './composables/useEagleApi'
 
 // モーダルの表示状態

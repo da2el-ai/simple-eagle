@@ -11,6 +11,13 @@ from modules.eagle_api import eagle_api
 class ImageRequest(BaseModel):
     path: str
 
+class UpdateRequest(BaseModel):
+    id: str
+    tags: list[str] | None = None
+    annotation: str | None = None
+    url: str | None = None
+    star: int | None = None
+
 app = FastAPI()
 
 # APIルーター
@@ -76,6 +83,20 @@ async def get_image(id: str, ext: str = "png", max_file_size: int = 1480, qualit
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@api_router.post("/update")
+async def update_item(request: UpdateRequest):
+    """
+    画像情報を更新する
+    """
+    try:
+        data = request.dict(exclude_none=True)
+        result = eagle_api.update_item(data["id"], data)
+        if result["status"] == "error":
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # CORSの設定
 app.add_middleware(

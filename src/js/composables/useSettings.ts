@@ -4,27 +4,39 @@ import { ref } from 'vue'
 export type TSettings = {
   max_file_size: number | null
   quality: number | null
+  gridSize: {
+    base: number
+    md: number
+    xl: number
+  }
+  objectFit: 'cover' | 'contain'
 }
-
-const API_BASE_URL = '/api/eagle';
 
 // デフォルト設定値
 const DEFAULT_SETTINGS = {
   max_file_size: 768,
-  quality: 85
+  quality: 85,
+  gridSize: {
+    base: 4,
+    md: 5,
+    xl: 6
+  },
+  objectFit: 'cover'
 } as const
 
 // localStorage のキー
 const STORAGE_KEY = 'eagle_viewer_settings'
 
+// シングルトンインスタンス
+let instance: ReturnType<typeof createSettings> | null = null;
 
-export { API_BASE_URL };
-
-export function useSettings() {
+function createSettings() {
   // 設定データ
   const settings = ref<TSettings>({
     max_file_size: null,
-    quality: null
+    quality: null,
+    gridSize: DEFAULT_SETTINGS.gridSize,
+    objectFit: DEFAULT_SETTINGS.objectFit
   })
 
   // localStorageから設定を読み込む
@@ -35,7 +47,9 @@ export function useSettings() {
         const parsed = JSON.parse(savedSettings)
         settings.value = {
           max_file_size: parsed.max_file_size || null,
-          quality: parsed.quality || null
+          quality: parsed.quality || null,
+          gridSize: parsed.gridSize || DEFAULT_SETTINGS.gridSize,
+          objectFit: parsed.objectFit || DEFAULT_SETTINGS.objectFit
         }
       }
     } catch (error) {
@@ -49,7 +63,9 @@ export function useSettings() {
   const saveSettings = () => {
     const settingsToSave = {
       max_file_size: settings.value.max_file_size || DEFAULT_SETTINGS.max_file_size,
-      quality: settings.value.quality || DEFAULT_SETTINGS.quality
+      quality: settings.value.quality || DEFAULT_SETTINGS.quality,
+      gridSize: settings.value.gridSize,
+      objectFit: settings.value.objectFit
     }
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settingsToSave))
@@ -60,7 +76,9 @@ export function useSettings() {
   const resetToDefaults = () => {
     settings.value = {
       max_file_size: DEFAULT_SETTINGS.max_file_size,
-      quality: DEFAULT_SETTINGS.quality
+      quality: DEFAULT_SETTINGS.quality,
+      gridSize: DEFAULT_SETTINGS.gridSize,
+      objectFit: DEFAULT_SETTINGS.objectFit
     }
   }
 
@@ -93,13 +111,37 @@ export function useSettings() {
     localStorage.removeItem(STORAGE_KEY)
     settings.value = {
       max_file_size: null,
-      quality: null
+      quality: null,
+      gridSize: DEFAULT_SETTINGS.gridSize,
+      objectFit: DEFAULT_SETTINGS.objectFit
     }
   }
 
   // 初期化時に設定を読み込み
   const initialize = () => {
     loadSettings()
+  }
+
+  // グリッドサイズを取得
+  const getGridSize = () => {
+    return settings.value.gridSize
+  }
+
+  // グリッドサイズを設定
+  const setGridSize = (newSize: TSettings['gridSize']) => {
+    settings.value.gridSize = newSize
+    saveSettings()
+  }
+
+  // object-fitを取得
+  const getObjectFit = () => {
+    return settings.value.objectFit
+  }
+
+  // object-fitを設定
+  const setObjectFit = (newFit: TSettings['objectFit']) => {
+    settings.value.objectFit = newFit
+    saveSettings()
   }
 
   return {
@@ -116,8 +158,21 @@ export function useSettings() {
     shouldCompress,
     clearSettings,
     initialize,
+    getGridSize,
+    setGridSize,
+    getObjectFit,
+    setObjectFit,
     
     // 定数
     DEFAULT_SETTINGS
   }
+}
+
+// シングルトンパターンを実装したuseSettings
+export function useSettings() {
+  if (!instance) {
+    instance = createSettings()
+    instance.initialize()
+  }
+  return instance
 }

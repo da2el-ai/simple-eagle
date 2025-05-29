@@ -1,20 +1,20 @@
 <template>
   <!-- グリッドサイズ変更ボタン -->
-  <div class="fixed bottom-4 right-4 flex items-center bg-white shadow-lg rounded-lg border">
+  <div class="flex items-center bg-white shadow-lg rounded-lg border">
     <button 
       @click="decreaseGridSize"
       :disabled="!canDecrease"
-      class="px-3 py-2 text-lg font-bold hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-lg"
+      class="h-10 px-3 text-lg font-bold hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-lg"
     >
       −
     </button>
-    <div class="px-2 py-2 text-sm text-gray-500 border-l border-r">
+    <div class="h-10 px-2 flex items-center text-sm text-gray-500 border-l border-r">
       {{ currentDisplayedGridSize }}
     </div>
     <button 
       @click="increaseGridSize"
       :disabled="!canIncrease"
-      class="px-3 py-2 text-lg font-bold hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-lg"
+      class="h-10 px-3 text-lg font-bold hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-lg"
     >
       ＋
     </button>
@@ -23,20 +23,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useSettings } from '../composables/useSettings';
 
-// プロパティの定義
-const props = defineProps<{
-  gridSize: {
-    base: number
-    md: number
-    xl: number
-  }
-}>()
-
-// エミット定義
-const emit = defineEmits<{
-  'update:gridSize': [gridSize: { base: number, md: number, xl: number }]
-}>()
+const settings = useSettings()
+const gridSize = computed(() => settings.getGridSize())
 
 // 画面サイズの検出
 const screenSize = ref<'base' | 'md' | 'xl'>('base')
@@ -67,22 +57,17 @@ const updateScreenSize = () => {
 
 // 現在の画面サイズに対応するグリッドサイズを取得
 const currentDisplayedGridSize = computed(() => {
-  return props.gridSize[screenSize.value]
+  return gridSize.value[screenSize.value]
 })
 
-// // 現在の画面サイズに対応する最大値を取得
-// const currentMaxGridSize = computed(() => {
-//   return maxGridSize[screenSize.value]
-// })
-
-// // 現在の画面サイズに対応する最小値を取得
-// const currentMinGridSize = computed(() => {
-//   return minGridSize[screenSize.value]
-// })
+// グリッドサイズ更新関数
+const updateGridSize = (newGridSize: { base: number, md: number, xl: number }) => {
+  settings.setGridSize(newGridSize)
+}
 
 // グリッドサイズを増加
 const increaseGridSize = () => {
-  const newGridSize = { ...props.gridSize }
+  const newGridSize = { ...gridSize.value }
   
   if (newGridSize.base < maxGridSize.base) {
     newGridSize.base++
@@ -94,12 +79,12 @@ const increaseGridSize = () => {
     newGridSize.xl++
   }
   
-  emit('update:gridSize', newGridSize)
+  updateGridSize(newGridSize);
 }
 
 // グリッドサイズを減少
 const decreaseGridSize = () => {
-  const newGridSize = { ...props.gridSize }
+  const newGridSize = { ...gridSize.value }
   
   if (newGridSize.base > minGridSize.base) {
     newGridSize.base--
@@ -111,21 +96,23 @@ const decreaseGridSize = () => {
     newGridSize.xl--
   }
   
-  emit('update:gridSize', newGridSize)
+  updateGridSize(newGridSize);
 }
+
+
 
 // 増加可能かどうか
 const canIncrease = computed(() => {
-  return props.gridSize.base < maxGridSize.base ||
-         props.gridSize.md < maxGridSize.md ||
-         props.gridSize.xl < maxGridSize.xl
+  return gridSize.value.base < maxGridSize.base ||
+         gridSize.value.md < maxGridSize.md ||
+         gridSize.value.xl < maxGridSize.xl
 })
 
 // 減少可能かどうか
 const canDecrease = computed(() => {
-  return props.gridSize.base > minGridSize.base ||
-         props.gridSize.md > minGridSize.md ||
-         props.gridSize.xl > minGridSize.xl
+  return gridSize.value.base > minGridSize.base ||
+         gridSize.value.md > minGridSize.md ||
+         gridSize.value.xl > minGridSize.xl
 })
 
 // ライフサイクルフック

@@ -130,4 +130,21 @@ class EagleApi:
             debug_print(f"Error getting image detail: {e}")
             return None
 
+    def update_item(self, item_id: str, data: dict):
+        """
+        画像情報を更新する
+        Args:
+            item_id (str): 更新する画像のID
+            data (dict): 更新するデータ（tags, annotation, url, starなど）
+        """
+        try:
+            url = f'{self.base_url}/api/item/update'
+            data['id'] = item_id
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            debug_print(f"Error updating item: {e}")
+            return {"status": "error", "message": str(e)}
+
 eagle_api = EagleApi()

@@ -1,11 +1,11 @@
 <template>
-  <div class="relative">
+  <div class="relative pb-12">
     <div :class="gridClasses">
       <!-- 子フォルダーボタン -->
       <div 
         v-for="childFolder in childFolders" 
         :key="`folder-${childFolder.id}`" 
-        class="relative aspect-square"
+        class="c-grid-item relative aspect-square"
       >
         <div
           class="w-full h-full bg-blue-50 rounded overflow-hidden relative cursor-pointer hover:bg-blue-100 transition-colors flex flex-col items-center justify-center"
@@ -27,10 +27,10 @@
       </div>
 
       <!-- 画像リスト -->
-      <div v-for="image in images" :key="image.id" class="relative aspect-square">
+      <div v-for="image in images" :key="image.id" class="c-grid-item relative">
         <div
           :class="[
-            'w-full h-full bg-gray-100 rounded overflow-hidden relative',
+            'bg-gray-100 rounded overflow-hidden relative aspect-square',
             isClickableImage(image) ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
           ]"
           ref="imageRefs"
@@ -39,31 +39,42 @@
           <img
             :src="`${ApiBaseUrl}/get_thumbnail_image?id=${image.id}`"
             :alt="image.name"
-            class="w-full h-full object-cover"
+            :class="['w-full h-full', `object-${currentObjectFit}`]"
             loading="lazy"
             @error="handleImageError(image)"
           />
 
           <span class="c-badge" :data-clickable="isClickableImage(image) ? 'true' : 'false'">{{ image.ext.toUpperCase() }}</span>
+        </div>
 
+        <div class="py-1">
+          <StarRatingMini :model-value="image.star || 0" />
         </div>
       </div>
+      <!-- /.c-grid-item -->
     </div>
 
-    <!-- グリッドサイズ変更ボタン -->
-    <GridSizeControl 
-      :grid-size="currentGridSize" 
-      @update:grid-size="updateGridSize"
-    />
+    <div class="fixed bottom-4 right-4 flex items-center gap-2">
+      <!-- object-fit 変更ボタン -->
+      <ObjectFitControl />
+
+      <!-- グリッドサイズ変更ボタン -->
+      <GridSizeControl />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useEagleApi } from '../composables/useEagleApi'
-import { API_BASE_URL } from '../composables/useSettings';
-import type { TImageItem, TFolderItem } from '../composables/useEagleApi'
+import { API_BASE_URL } from '../env'
+import { useSettings } from '../composables/useSettings';
+import type { TImageItem, TFolderItem } from '../types'
 import GridSizeControl from './GridSizeControl.vue'
+import ObjectFitControl from './ObjectFitControl.vue'
+import StarRatingMini from './StarRatingMini.vue'
+
+const settings = useSettings()
 
 const props = defineProps<{
   folderId?: string
@@ -82,26 +93,19 @@ const ApiBaseUrl = computed(() => {
   return API_BASE_URL;
 })
 
-// グリッドサイズの状態管理
-const currentGridSize = ref({
-  base: 4,    // 基本サイズ
-  md: 5,      // mdサイズ
-  xl: 6       // xlサイズ
-})
-
-// グリッドサイズ更新関数
-const updateGridSize = (newGridSize: { base: number, md: number, xl: number }) => {
-  currentGridSize.value = newGridSize
-}
+// object-fitの状態管理
+const currentObjectFit = computed(() => settings.getObjectFit())
 
 // グリッドクラスを動的に生成
 const gridClasses = computed(() => {
+  const gridSize = settings.getGridSize();
+
   return [
     'grid',
     'gap-6',
-    `grid-cols-${currentGridSize.value.base}`,
-    `md:grid-cols-${currentGridSize.value.md}`,
-    `xl:grid-cols-${currentGridSize.value.xl}`
+    `grid-cols-${gridSize.base}`,
+    `md:grid-cols-${gridSize.md}`,
+    `xl:grid-cols-${gridSize.xl}`
   ].join(' ')
 })
 
@@ -150,5 +154,4 @@ const handleFolderClick = (folderId: string) => {
 const handleImageError = (image: TImageItem) => {
   console.error('Failed to load image:', image.name, image)
 }
-
 </script>

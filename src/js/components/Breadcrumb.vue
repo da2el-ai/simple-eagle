@@ -34,7 +34,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useEagleApi, type TFolderItem } from '../composables/useEagleApi'
+import { useEagleApi, } from '../composables/useEagleApi'
+import type { TFolderItem } from '../types';
 
 const props = defineProps<{
   currentFolderId?: string
