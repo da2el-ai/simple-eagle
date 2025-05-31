@@ -1,15 +1,14 @@
 import { ref } from 'vue'
 import { API_BASE_URL } from '../env'
-import type { TImageItem, TFolderItem } from '../types';
+import type { TFolderItem } from '../types'
+import { useMainStore } from '../store'
 
 class EagleApi {
-  private static instance: EagleApi
-  private loading = ref(false)
-  private error = ref<string | null>(null)
-  private folderOpenStates = ref<Record<string, boolean>>({})
-  private images = ref<TImageItem[]>([])
-  private folders = ref<TFolderItem[]>([])
-  private foldersLoading = ref(false)
+  private static instance: EagleApi;
+  public isImagesLoading = ref(false);
+  public isFoldersLoading = ref(false);
+  private error = ref<string | null>(null);
+  private store = useMainStore();
 
   private constructor() {}
 
@@ -19,22 +18,30 @@ class EagleApi {
     }
     return EagleApi.instance
   }
+  
+  public isLoading() {
+    return this.isImagesLoading
+  }
+
+  public getError() {
+    return this.error
+  }
 
   /**
    * 最新の画像一覧を取得して内部に保存
    * @param limit 
    * @param folderId 
    */
-  public async loadRecentImages(limit: number = 100, folderId?: string): Promise<void> {
-    this.loading.value = true
+  public async loadImages(limit: number = 100, folderId: string = 'all'): Promise<void> {
+    this.isImagesLoading.value = true
     this.error.value = null
-    // console.log('[useEagleApi] loadRecentImages', folderId);
+    // console.log('//////[useEagleApi] loadImages', folderId);
 
     try {
       const url = new URL(`${API_BASE_URL}/recent`, window.location.origin)
       url.searchParams.append('limit', limit.toString())
       if (folderId) {
-        url.searchParams.append('folder_id', folderId)
+        url.searchParams.append('folder_id', folderId === 'all' ? '' : folderId)
       }
       const response = await fetch(url)
       // console.log('API response status:', response.status)
@@ -50,68 +57,18 @@ class EagleApi {
       }
       if (!data.data) {
         console.warn('No data field in response:', data)
-        this.images.value = [];
+        this.store.setImages([])
         return;
       }
       // console.log('Number of images received:', data.data.length)
-      this.images.value = data.data || [];
+      this.store.setImages(data.data || [])
     } catch (err) {
-      console.error('Error in loadRecentImages:', err)
+      console.error('Error in loadImages:', err)
       this.error.value = err instanceof Error ? err.message : 'Unknown error occurred'
-      this.images.value = [];
+      this.store.setImages([])
     } finally {
-      this.loading.value = false
+      this.isImagesLoading.value = false
     }
-  }
-
-  /**
-   * 最新の画像一覧を取得（後方互換性のため）
-   * @param limit 
-   * @returns 
-   */
-  public async getRecentImages(limit: number = 100, folderId?: string): Promise<TImageItem[]> {
-    await this.loadRecentImages(limit, folderId)
-    return this.images.value
-  }
-
-  /**
-   * 保存されている画像リストを取得
-   */
-  public getImages() {
-    return this.images
-  }
-
-
-  public isLoading() {
-    return this.loading
-  }
-
-  public getError() {
-    return this.error
-  }
-
-  /**
-   * フォルダーの開閉状態を取得
-   */
-  public getFolderOpenState(folderId: string): boolean {
-    return this.folderOpenStates.value[folderId] || false
-  }
-
-  /**
-   * フォルダーの開閉状態を設定
-   */
-  public setFolderOpenState(folderId: string, isOpen: boolean): void {
-    this.folderOpenStates.value[folderId] = isOpen
-  }
-
-  /**
-   * フォルダーの開閉状態を切り替え
-   */
-  public toggleFolderOpenState(folderId: string): boolean {
-    const currentState = this.getFolderOpenState(folderId)
-    const newState = !currentState
-    this.setFolderOpenState(folderId, newState)
-    return newState
   }
 
   /**
@@ -141,20 +98,20 @@ class EagleApi {
    */
   public async loadFolders(): Promise<void> {
     // 既に読み込み中の場合は待機
-    if (this.foldersLoading.value) {
+    if (this.isFoldersLoading.value) {
       // 読み込み完了まで待機
-      while (this.foldersLoading.value) {
+      while (this.isFoldersLoading.value) {
         await new Promise(resolve => setTimeout(resolve, 50))
       }
       return
     }
 
     // 既に読み込み済みの場合はスキップ
-    if (this.folders.value.length > 0) {
+    if (this.store.getFolders.length > 0) {
       return
     }
 
-    this.foldersLoading.value = true
+    this.isFoldersLoading.value = true
     this.error.value = null
 
     try {
@@ -171,7 +128,7 @@ class EagleApi {
       }
       if (!data.data) {
         console.warn('No data field in response:', data)
-        this.folders.value = [];
+        this.store.setFolders([])
         return;
       }
 
@@ -182,8 +139,8 @@ class EagleApi {
 
       // 「全て」アイテムを作成
       const allItem: TFolderItem = {
-        id: "",
-        name: "全て",
+        id: "all",
+        name: "ALL",
         description: "",
         children: [],
         modificationTime: Date.now(),
@@ -195,23 +152,15 @@ class EagleApi {
       }
     
       // 「全て」を先頭に追加して保存
-      this.folders.value = [allItem, ...folders]
+      this.store.setFolders([allItem, ...folders])
  
     } catch (err) {
       console.error('Error in loadFolders:', err)
       this.error.value = err instanceof Error ? err.message : 'Unknown error occurred'
-      this.folders.value = [];
+      this.store.setFolders([])
     } finally {
-      this.foldersLoading.value = false
+      this.isFoldersLoading.value = false
     }
-  }
-
-
-  /**
-   * 保存されているフォルダーリストを取得
-   */
-  public getFoldersSync() {
-    return this.folders
   }
 
   /**
@@ -247,12 +196,15 @@ class EagleApi {
       }
 
       // 成功した場合、現在のimages配列内の該当アイテムも更新
-      const index = this.images.value.findIndex(img => img.id === itemId);
+      const images = this.store.getImages
+      const index = images.findIndex(img => img.id === itemId);
       if (index !== -1) {
-        this.images.value[index] = {
-          ...this.images.value[index],
+        const updatedImages = [...images]
+        updatedImages[index] = {
+          ...updatedImages[index],
           ...data
         };
+        this.store.setImages(updatedImages)
       }
 
       return result;

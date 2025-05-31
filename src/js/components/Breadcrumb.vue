@@ -4,11 +4,11 @@
     <nav class="flex items-center space-x-2" v-if="breadcrumbPath.length > 0">
       <!-- ホーム -->
       <button 
-        @click="handleBreadcrumbClick(null)"
+        @click="handleBreadcrumbClick('all')"
         class="hover:text-gray-600 transition-colors"
-        :class="{ 'text-blue-500 font-medium': !currentFolderId }"
+        :class="{ 'text-blue-500 font-medium': !currentFolder }"
       >
-        すべて
+        ALL
       </button>
       
       <!-- パンくずの各階層 -->
@@ -17,7 +17,7 @@
         <button 
           @click="handleBreadcrumbClick(item.id)"
           class="hover:text-gray-600 transition-colors truncate max-w-32"
-          :class="{ 'text-gray-600 font-medium': item.id === currentFolderId }"
+          :class="{ 'text-gray-600 font-medium': item.id === currentFolder?.id }"
           :title="item.name"
         >
           {{ item.name }}
@@ -27,55 +27,34 @@
     
     <!-- フォルダーが選択されていない場合 -->
     <nav v-else class="flex items-center">
-      <span class="text-gray-400 font-medium">すべて</span>
+      <span class="text-gray-400 font-medium">ALL</span>
     </nav>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useEagleApi, } from '../composables/useEagleApi'
-import type { TFolderItem } from '../types';
+import { computed } from 'vue';
+import { useMainStore } from '../store';
+import { useRouter } from 'vue-router';
 
-const props = defineProps<{
-  currentFolderId?: string
-}>()
+const store = useMainStore();
+const router = useRouter();
 
-const emit = defineEmits<{
-  (e: 'folderSelect', folderId: string | null): void
-}>()
+// onMounted(() => {
+//   console.log("Breadcrumb component mounted", store.getCurrentFolder);
+//   console.log("Breadcrumb component mounted", store.getFolders);
+// });
 
-const eagleApi = useEagleApi()
-const folders = eagleApi.getFoldersSync()
+// 現在のフォルダーを取得
+const currentFolder = computed(() => store.getCurrentFolder);
 
-// フォルダーIDから親フォルダーまでのパスを取得する関数
-const findFolderPath = (folderId: string, folderList: TFolderItem[]): TFolderItem[] => {
-  for (const folder of folderList) {
-    if (folder.id === folderId) {
-      return [folder]
-    }
-    
-    if (folder.children && folder.children.length > 0) {
-      const childPath = findFolderPath(folderId, folder.children)
-      if (childPath.length > 0) {
-        return [folder, ...childPath]
-      }
-    }
-  }
-  return []
-}
-
-// パンくずリストのパスを計算
-const breadcrumbPath = computed(() => {
-  if (!props.currentFolderId || folders.value.length === 0) {
-    return []
-  }
-  return findFolderPath(props.currentFolderId, folders.value)
-})
+// パンくずリストのパスを取得（Piniaストアのgetterから）
+const breadcrumbPath = computed(() => store.getBreadcrumbs);
 
 // パンくずリストのクリック処理
-const handleBreadcrumbClick = (folderId: string | null) => {
-  emit('folderSelect', folderId)
+const handleBreadcrumbClick = (folderId: string) => {
+  // store.setCurrentFolder(folderId);
+  router.push({ name: 'folder', params: { folderId } });
 }
 
 </script>

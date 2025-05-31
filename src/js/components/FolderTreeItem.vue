@@ -36,31 +36,37 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useEagleApi } from '../composables/useEagleApi'
+import { computed } from 'vue';
+import { useMainStore } from '../store';
 import type { TFolderItem } from '../types';
 
 const props = defineProps<{
   folder: TFolderItem
-}>()
+}>();
 
 const emit = defineEmits<{
   (e: 'select', folderId: string): void
-}>()
+}>();
 
-const eagleApi = useEagleApi()
+const store = useMainStore();
 
-// グローバルな開閉状態を使用
+// フォルダーの展開状態を変更
 const isOpen = computed({
-  get: () => eagleApi.getFolderOpenState(props.folder.id),
-  set: (value: boolean) => eagleApi.setFolderOpenState(props.folder.id, value)
+  get: () => {
+    return store.expandedFolders.includes(props.folder.id);
+  },
+  set: (value: boolean) => {
+    if (value) {
+      store.addExpandedFolder(props.folder.id);
+    } else {
+      store.removeExpandedFolder(props.folder.id);
+    }
+  }
 })
 
+// フォルダーをクリックしたときの処理
 const handleClick = () => {
-  emit('select', props.folder.id)
+  emit('select', props.folder.id);
 }
 
-// const toggleOpen = () => {
-//   isOpen.value = !isOpen.value
-// }
 </script>

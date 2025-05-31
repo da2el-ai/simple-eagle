@@ -3,6 +3,11 @@
     <div class="fixed left-0 top-0 w-[min(80vw,20rem)] h-full bg-white shadow-lg overflow-y-auto">
       <div class="p-4">
 
+        <div class="flex mb-4 justify-end items-center">
+          <!-- 設定ボタン -->
+          <SettingButton @click="showSettingView" />
+        </div>
+
         <div v-if="loading" class="text-center py-4">
           読み込み中...
         </div>
@@ -24,10 +29,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useEagleApi } from '../composables/useEagleApi'
+import { useRouter } from 'vue-router'
+import { useMainStore } from '../store'
 import ModalView from './ModalView.vue'
 import FolderTreeItem from './FolderTreeItem.vue'
-// import CloseButton from './CloseButton.vue'
+import SettingButton from './SettingButton.vue'
 
 defineProps<{
   isOpen: boolean
@@ -35,21 +43,32 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:isOpen', value: boolean): void
-  (e: 'select', folderId: string): void
 }>()
 
-const eagleApi = useEagleApi()
-const folders = eagleApi.getFoldersSync()
-const loading = eagleApi.isLoading()
-const error = eagleApi.getError()
+const eagleApi = useEagleApi();
+const router = useRouter();
+const store = useMainStore();
 
+// Piniaストアからフォルダーを取得
+const folders = computed(() => store.getFolders);
+const loading = eagleApi.isLoading();
+const error = eagleApi.getError();
+
+// フォルダー一覧を閉じる
 const handleClose = () => {
-  emit('update:isOpen', false)
+  emit('update:isOpen', false);
 }
 
+// フォルダーを選択
 const handleFolderSelect = (folderId: string) => {
-  emit('select', folderId)
-  emit('update:isOpen', false)
+  // store.setCurrentFolder(folderId);
+  router.push({ name: 'folder', params: { folderId } });
+  emit('update:isOpen', false);
 }
 
+// 設定を開く
+const showSettingView = () => {
+  router.push({ name: 'setting', params: { folderId: store.getCurrentFolderId } });
+  handleClose();
+}
 </script>

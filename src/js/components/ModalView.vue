@@ -44,6 +44,3 @@ defineEmits<{
 }>()
 </script>
 
-<style scoped>
-/* 必要に応じてカスタムスタイルを追加 */
-</style>

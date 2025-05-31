@@ -2,29 +2,11 @@
   <div class="relative pb-12">
     <div :class="gridClasses">
       <!-- 子フォルダーボタン -->
-      <div 
-        v-for="childFolder in childFolders" 
+      <ImagelistviewFolder
+        v-for="childFolder in childFolders"
         :key="`folder-${childFolder.id}`" 
-        class="c-grid-item relative aspect-square"
-      >
-        <div
-          class="w-full h-full bg-blue-50 rounded overflow-hidden relative cursor-pointer hover:bg-blue-100 transition-colors flex flex-col items-center justify-center"
-          @click="handleFolderClick(childFolder.id)"
-        >
-          <!-- フォルダーアイコン -->
-          <div class="text-blue-500 text-2xl mb-2">📁</div>
-          
-          <!-- フォルダー名 -->
-          <span class="text-xs text-blue-700 text-center px-2 truncate w-full">
-            {{ childFolder.name }}
-          </span>
-          
-          <!-- 画像数 -->
-          <span class="text-xs text-blue-500 mt-1">
-            ({{ childFolder.imageCount }})
-          </span>
-        </div>
-      </div>
+        :child-folder="childFolder"
+      />
 
       <!-- 画像リスト -->
       <div v-for="image in images" :key="image.id" class="c-grid-item relative">
@@ -66,28 +48,23 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useEagleApi } from '../composables/useEagleApi'
 import { API_BASE_URL } from '../env'
-import { useSettings } from '../composables/useSettings';
-import type { TImageItem, TFolderItem } from '../types'
+import { useSettings } from '../composables/useSettings'
+import { useMainStore } from '../store'
+import { useRouter } from 'vue-router'
+import type { TImageItem } from '../types'
 import GridSizeControl from './GridSizeControl.vue'
 import ObjectFitControl from './ObjectFitControl.vue'
 import StarRatingMini from './StarRatingMini.vue'
+import ImagelistviewFolder from './ImageListFolder.vue';
 
 const settings = useSettings()
+const store = useMainStore()
+const router = useRouter()
 
-const props = defineProps<{
-  folderId?: string
-}>()
+// Piniaストアから画像とフォルダーを取得
+const images = computed(() => store.getImages)
 
-const emit = defineEmits<{
-  'image-click': [image: TImageItem]
-  'folder-click': [folderId: string]
-}>()
-
-const eagleApi = useEagleApi()
-const images = eagleApi.getImages()
-const allFolders = eagleApi.getFoldersSync()
 
 const ApiBaseUrl = computed(() => {
   return API_BASE_URL;
@@ -110,45 +87,20 @@ const gridClasses = computed(() => {
 })
 
 // 現在のフォルダーの子フォルダーを取得
-const childFolders = computed(() => {
-  // if (!props.folderId) {
-  //   // ルートレベルの場合、トップレベルフォルダーを返す
-  //   return allFolders.value
-  // }
-  
-  // 指定されたフォルダーIDの子フォルダーを検索
-  const findChildren = (folders: TFolderItem[], targetId: string): TFolderItem[] => {
-    for (const folder of folders) {
-      if (folder.id === targetId) {
-        return folder.children || []
-      }
-      if (folder.children && folder.children.length > 0) {
-        const result = findChildren(folder.children, targetId)
-        if (result.length > 0) {
-          return result
-        }
-      }
-    }
-    return []
-  }
-  
-  return props.folderId ? findChildren(allFolders.value, props.folderId) : []
-})
+const childFolders = computed(() => store.getChildFolders);
+// 現在のフォルダーを取得
+const currentFolder = computed(() => store.getCurrentFolder);
 
 // クリック可能な画像かどうかを判定
 const isClickableImage = (image: TImageItem): boolean => {
-  const clickableExtensions = ['png', 'jpg', 'jpeg', 'webp']
-  return clickableExtensions.includes(image.ext.toLowerCase())
+  return true;
+  // const clickableExtensions = ['png', 'jpg', 'jpeg', 'webp']
+  // return clickableExtensions.includes(image.ext.toLowerCase())
 }
 
 // 画像クリック時の処理
 const handleImageClick = (image: TImageItem) => {
-  emit('image-click', image)
-}
-
-// フォルダークリック時の処理
-const handleFolderClick = (folderId: string) => {
-  emit('folder-click', folderId)
+  router.push(`/folder/${currentFolder.value?.id || 'all'}/detail/${image.id}`)
 }
 
 const handleImageError = (image: TImageItem) => {
