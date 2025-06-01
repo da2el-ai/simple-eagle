@@ -16,21 +16,29 @@ class EagleApi:
     def __init__(self):
         self.base_url = 'http://localhost:41595'
 
-    def get_list(self, limit=100, folder_id=None):
+    def get_list(self, limit=200, offset=0, orderBy=None, keyword=None, ext=None, tags=None, folders=None):
         """
-        最新の画像一覧を取得
+        画像一覧を取得
         Args:
             limit (int): 取得する画像の最大数
             folder_id (str, optional): 指定されたフォルダーIDの画像のみを取得
         """
         try:
             # URLパラメータを構築
-            params = f'limit={limit}'
-            if folder_id:
-                params += f'&folders={folder_id}'
+            params = f'limit={limit}&offset={offset}'
+            if orderBy:
+                params += f'&orderBy={orderBy}'
+            if keyword:
+                params += f'&keyword={keyword}'
+            if ext:
+                params += f'&ext={ext}'
+            if tags:
+                params += f'&tags={tags}'
+            if folders:
+                params += f'&folders={folders}'
             
             url = f'{self.base_url}/api/item/list?{params}'
-            debug_print(f"Requesting recent images from Eagle API with limit: {limit}, folder_id: {folder_id}")
+            debug_print(f"Requesting images from Eagle API with params: {params}")
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
