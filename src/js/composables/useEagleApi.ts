@@ -38,7 +38,7 @@ class EagleApi {
     // console.log('//////[useEagleApi] loadImages', folderId);
 
     try {
-      const url = new URL(`${API_BASE_URL}/recent`, window.location.origin)
+      const url = new URL(`${API_BASE_URL}/list`, window.location.origin)
       url.searchParams.append('limit', limit.toString())
       if (folderId) {
         url.searchParams.append('folder_id', folderId === 'all' ? '' : folderId)

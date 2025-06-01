@@ -16,7 +16,7 @@ class EagleApi:
     def __init__(self):
         self.base_url = 'http://localhost:41595'
 
-    def get_recent_images(self, limit=100, folder_id=None):
+    def get_list(self, limit=100, folder_id=None):
         """
         最新の画像一覧を取得
         Args:
