@@ -68,7 +68,8 @@ const handleFolderSelect = (folderId: string) => {
 
 // 設定を開く
 const showSettingView = () => {
-  router.push({ name: 'setting', params: { folderId: store.getCurrentFolderId } });
+  // router.push({ name: 'setting', params: { folderId: store.getCurrentFolderId } });
+  store.setSettingOpen(true);
   handleClose();
 }
 </script>

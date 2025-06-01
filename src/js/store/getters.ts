@@ -7,7 +7,7 @@ export const getters = {
   
   // フォルダ一覧を取得
   getFolders: (state: TStoreState) => state.folders,
-  
+
   // 現在の画像を取得
   getCurrentImage: (state: TStoreState) => state.currentImage,
   
@@ -99,5 +99,14 @@ export const getters = {
     
     return state.currentFolderId ? findChildren(state.folders, state.currentFolderId) : []
   },
+
+  // 拡張子リストを取得
+  getExtList: (state: TStoreState) => state.extList,
+
+  // 設定画面の開閉状態を取得
+  getSettingOpen: (state: TStoreState) => state.isSettingOpen,
+
+  // フィルター画面の開閉状態を取得
+  getFilterOpen: (state: TStoreState) => state.isFilterOpen,
 
 }

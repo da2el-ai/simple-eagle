@@ -36,5 +36,20 @@ export const actions = {
     if (index > -1) {
       this.expandedFolders.splice(index, 1);
     }
-  }
+  },
+
+  // 拡張子リストを追加
+  setExtList(this: TStoreState, extList: string[]) {
+    this.extList = extList;
+  },
+
+  // 設定画面の開閉状態を設定
+  setSettingOpen(this: TStoreState, isOpen: boolean) {
+    this.isSettingOpen = isOpen;
+  },
+
+  // フィルター画面の開閉状態を設定
+  setFilterOpen(this: TStoreState, isOpen: boolean) {
+    this.isFilterOpen = isOpen;
+  },
 }

@@ -1,5 +1,5 @@
 <template>
-  <ModalView @close="closeSettings" :showCloseButton="false" :fit-height="true">
+  <ModalView v-if="isSettingsOpen" @close="closeSettings" :showCloseButton="false" :fit-height="true">
     <Dialog @close="closeSettings">
       <div class="max-w-2xl mx-auto">
         <h2 class="text-2xl font-bold mb-6">設定</h2>
@@ -66,8 +66,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, computed } from 'vue';
+// import { useRouter } from 'vue-router';
 import { useSettings } from '../composables/useSettings';
 import { useMainStore } from '../store';
 import ModalView from './ModalView.vue';
@@ -75,18 +75,27 @@ import Dialog from './Dialog.vue';
 
 // 設定管理のコンポーザブルを使用
 const { settings, saveSettings, initialize } = useSettings()
-const router = useRouter()
+// const router = useRouter()
 const store = useMainStore()
+
+
+// 設定が開いているかどうかをcomputedプロパティで管理
+const isSettingsOpen = computed(() => {
+  return store.getSettingOpen;
+})
 
 // 設定を保存
 const handleSaveSettings = () => {
   saveSettings()
   alert('設定を保存しました')
-  router.push({ name: 'folder', params: { folderId: store.getCurrentFolderId } });
+  // router.push({ name: 'folder', params: { folderId: store.getCurrentFolderId } });
+  store.setSettingOpen(false);
 }
 
+// 設定を閉じる
 const closeSettings = () => {
-  router.push({ name: 'folder', params: { folderId: store.getCurrentFolderId } });
+  // router.push({ name: 'folder', params: { folderId: store.getCurrentFolderId } });
+  store.setSettingOpen(false);
 }
 
 // コンポーネントマウント時に設定を読み込み

@@ -17,6 +17,9 @@ export type TStoreState = {
   currentFolderId: string | null
   expandedFolders: string[]
   filterParam: TFilterParam
+  extList: string[]  // 拡張子リスト
+  isSettingOpen: boolean // 設定画面の開閉状態
+  isFilterOpen: boolean // フィルター画面の開閉状態
 }
 
 export const useMainStore = defineStore('main', {
@@ -26,7 +29,10 @@ export const useMainStore = defineStore('main', {
     currentImage: null,
     currentFolderId: null,
     expandedFolders: [],
-    filterParam: {}
+    filterParam: {},
+    extList: [],
+    isSettingOpen: false,
+    isFilterOpen: false,
   }),
 
   getters,

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { API_BASE_URL } from '../env'
-import type { TFolderItem } from '../types'
+import type { TFolderItem, TImageItem } from '../types'
 import { useMainStore } from '../store'
 
 class EagleApi {
@@ -28,11 +28,19 @@ class EagleApi {
   }
 
   /**
-   * 最新の画像一覧を取得して内部に保存
+   * 画像一覧を取得して内部に保存
    * @param limit 
    * @param folderId 
    */
-  public async loadImages(limit: number = 100, folderId: string = 'all'): Promise<void> {
+  public async loadImages(
+    limit: number = 200, 
+    folderId: string = 'all',
+    offset: number = 0,
+    orderBy?: string,
+    keyword?: string,
+    ext?: string,
+    tags?: string
+  ): Promise<void> {
     this.isImagesLoading.value = true
     this.error.value = null
     // console.log('//////[useEagleApi] loadImages', folderId);
@@ -40,21 +48,38 @@ class EagleApi {
     try {
       const url = new URL(`${API_BASE_URL}/list`, window.location.origin)
       url.searchParams.append('limit', limit.toString())
-      if (folderId) {
-        url.searchParams.append('folder_id', folderId === 'all' ? '' : folderId)
+      url.searchParams.append('offset', offset.toString())
+      if (folderId && folderId !== 'all') {
+        url.searchParams.append('folders', folderId)
       }
+      if (orderBy) {
+        url.searchParams.append('orderBy', orderBy)
+      }
+      if (keyword) {
+        url.searchParams.append('keyword', keyword)
+      }
+      if (ext) {
+        url.searchParams.append('ext', ext)
+      }
+      if (tags) {
+        url.searchParams.append('tags', tags)
+      }
+      console.log('API URL:', url.toString());
       const response = await fetch(url)
+
       // console.log('API response status:', response.status)
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
+
       const data = await response.json()
       // console.log('API response data:', data)
       if (data.status === 'error') {
         console.error('API error:', data.message)
         throw new Error(data.message)
       }
+
       if (!data.data) {
         console.warn('No data field in response:', data)
         this.store.setImages([])
@@ -62,6 +87,17 @@ class EagleApi {
       }
       // console.log('Number of images received:', data.data.length)
       this.store.setImages(data.data || [])
+
+      // 拡張子リストを更新
+      const extSet = new Set<string>()
+      this.store.getImages.forEach((img:TImageItem) => {
+        if (img.ext) {
+          extSet.add(img.ext.toLowerCase())
+        }
+      })
+
+      this.store.setExtList(Array.from(extSet));
+
     } catch (err) {
       console.error('Error in loadImages:', err)
       this.error.value = err instanceof Error ? err.message : 'Unknown error occurred'
