@@ -1,4 +1,4 @@
-import type { TImageItem, TFolderItem } from '../types'
+import type { TImageItem, TFolderItem, TFilter } from '../types'
 import type { TStoreState } from './index'
 
 export const actions = {
@@ -18,6 +18,11 @@ export const actions = {
     this.currentImage = image || null;
   },
   
+  // 現在のフィルタクエリを設定
+  setCurrentFilter(this: TStoreState, filter: TFilter | null) {
+    this.currentFilter = filter;
+  },
+
   // 現在のフォルダIDを設定
   setCurrentFolderId(this: TStoreState, folderId: string) {
     this.currentFolderId = folderId;

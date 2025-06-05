@@ -14,15 +14,15 @@ const routes = [
     component: Lightbox,
     props: true
   },
-  // 検索ルート
+  // フィルタルート
   {
-    path: '/folder/:folderId/search',
-    name: 'search',
+    path: '/folder/:folderId/filter',
+    name: 'filter',
     component: { template: '<span></span>' },
   },  
   {
-    path: '/folder/:folderId/search/detail/:imageId',
-    name: 'searchDetail',
+    path: '/folder/:folderId/filter/detail/:imageId',
+    name: 'filterDetail',
     component: Lightbox,
     props: true
   },

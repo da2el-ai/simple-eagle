@@ -63,7 +63,55 @@ const store = useMainStore()
 const router = useRouter()
 
 // Piniaストアから画像とフォルダーを取得
-const images = computed(() => store.getImages)
+const images = computed(() => {
+  const allImages = store.getImages
+  const currentFilter = store.getCurrentFilter
+  
+  console.log('Current Filter:', currentFilter);
+
+  if (!currentFilter) {
+    return allImages
+  }
+  
+  return allImages.filter(image => {
+    // 星評価でフィルタリング
+    if (currentFilter.stars && currentFilter.stars.length > 0) {
+      const imageStar = image.star || 0
+      if (!currentFilter.stars.includes(imageStar)) {
+        return false
+      }
+    }
+    
+    // 拡張子でフィルタリング
+    if (currentFilter.exts && currentFilter.exts.length > 0) {
+      if (!currentFilter.exts.includes(image.ext.toLowerCase())) {
+        return false
+      }
+    }
+    
+    // キーワードでフィルタリング（名前に含まれるかチェック）
+    if (currentFilter.keyword && currentFilter.keyword.trim() !== '') {
+      const keyword = currentFilter.keyword.toLowerCase()
+      if (!image.name.toLowerCase().includes(keyword) && !image.annotation.toLowerCase().includes(keyword)) {
+        return false
+      }
+    }
+    
+    // タグでフィルタリング
+    if (currentFilter.tags && currentFilter.tags.length > 0) {
+      const hasMatchingTag = currentFilter.tags.some(filterTag => 
+        image.tags.some(imageTag => 
+          imageTag.toLowerCase().includes(filterTag.toLowerCase())
+        )
+      )
+      if (!hasMatchingTag) {
+        return false
+      }
+    }
+    
+    return true
+  })
+})
 
 
 const ApiBaseUrl = computed(() => {
@@ -78,6 +126,7 @@ const gridClasses = computed(() => {
   const gridSize = settings.getGridSize();
 
   return [
+    'c-grid',
     'grid',
     'gap-6',
     `grid-cols-${gridSize.base}`,

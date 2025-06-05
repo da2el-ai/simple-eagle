@@ -34,7 +34,7 @@
             <div class="flex gap-2 gap-x-4 flex-wrap">
               <label v-for="ext in store.getExtList" :key="ext" class="flex items-center">
                 <input
-                  v-model="filterForm.extensions"
+                  v-model="filterForm.exts"
                   :value="ext"
                   type="checkbox"
                   class="mr-1"
@@ -85,6 +85,13 @@
               キャンセル
             </button>
             <button
+              type="button"
+              @click="clearFilter"
+              class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              解除
+            </button>
+            <button
               type="submit"
               class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
             >
@@ -98,19 +105,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMainStore } from '../store';
 import ModalView from './ModalView.vue';
 import Dialog from './Dialog.vue';
+import { TFilter } from '../types';
 
 const store = useMainStore()
 const router = useRouter()
 
-// フィルターフォームの状態
+// フィルターフォームの状態（TFilter型に合わせたパラメーター名）
 const filterForm = ref({
   stars: [] as number[],
-  extensions: [] as string[],
+  exts: [] as string[],
   keyword: '',
   tags: ''
 })
@@ -122,24 +130,38 @@ const isFilterOpen = computed(() => {
 
 // フィルターを適用
 const handleApplyFilter = () => {
+  console.log('filterForm.value:', filterForm.value);
+  console.log('stars type:', typeof filterForm.value.stars, 'isArray:', Array.isArray(filterForm.value.stars));
+  console.log('exts type:', typeof filterForm.value.exts, 'isArray:', Array.isArray(filterForm.value.exts));
+  
+  // 配列チェックを追加してエラーを防ぐ
+  const starArray = Array.isArray(filterForm.value.stars) 
+    ? filterForm.value.stars.map(star => parseInt(star.toString(), 10))
+    : [];
+  const extArray = Array.isArray(filterForm.value.exts) 
+    ? filterForm.value.exts.map(ext => ext.trim()).filter(ext => ext !== '')
+    : [];
+  const keyword = filterForm.value.keyword.trim();
+  const tagArray = filterForm.value.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
   // いずれかの項目が入力されているかチェック
   const hasFilter = 
-    filterForm.value.stars.length > 0 ||
-    filterForm.value.extensions.length > 0 ||
-    filterForm.value.keyword.trim() !== '' ||
-    filterForm.value.tags.trim() !== ''
+    starArray.length > 0 ||
+    extArray.length > 0 ||
+    keyword !== '' ||
+    tagArray.length > 0;
 
   if (hasFilter) {
-    // 検索ルートに移動
+    // フィルタルートに移動
     router.push({
-      name: 'search',
+      name: 'filter',
       params: { folderId: store.getCurrentFolderId || 'all' },
       query: {
-        stars: filterForm.value.stars.join(','),
-        ext: filterForm.value.extensions.join(','),
-        keyword: filterForm.value.keyword,
-        tags: filterForm.value.tags
-      }
+        stars: starArray,
+        exts: extArray,
+        tags: tagArray,
+        keyword: keyword,
+      } as TFilter
     })
   } else {
     // 全ての項目が空欄の場合はフォルダールートに移動
@@ -148,6 +170,7 @@ const handleApplyFilter = () => {
       params: { folderId: store.getCurrentFolderId || 'all' }
     })
   }
+  store.setFilterOpen(false);
 }
 
 // フィルターを閉じる
@@ -155,8 +178,63 @@ const closeFilter = () => {
   store.setFilterOpen(false);
 }
 
+// フィルターを解除
+const clearFilter = () => {
+  // フィルターを解除してフォルダールートに移動
+  router.push({
+    name: 'folder',
+    params: { folderId: store.getCurrentFolderId || 'all' }
+  })
+  
+  // フィルターを閉じる
+  store.setFilterOpen(false);
+}
+
+
+// store.currentFilterの値をフォームに反映する関数
+const loadCurrentFilter = async () => {
+  const currentFilter = store.getCurrentFilter
+  console.log('loadCurrentFilter - currentFilter:', currentFilter);
+  
+  if (currentFilter) {
+    // 新しいオブジェクトを作成して強制的に更新
+    const newFormData = {
+      stars: Array.isArray(currentFilter.stars) ? [...currentFilter.stars] : [],
+      exts: Array.isArray(currentFilter.exts) ? [...currentFilter.exts] : [],
+      keyword: currentFilter.keyword || '',
+      tags: Array.isArray(currentFilter.tags) ? currentFilter.tags.join(', ') : ''
+    }
+    
+    console.log('loadCurrentFilter - newFormData:', newFormData);
+    
+    // 値を設定
+    filterForm.value = newFormData
+    
+    // nextTickを待ってから再度確認
+    await nextTick()
+    console.log('loadCurrentFilter - after nextTick:', filterForm.value);
+  } else {
+    // フィルターがない場合はフォームをリセット
+    filterForm.value = {
+      stars: [],
+      exts: [],
+      keyword: '',
+      tags: ''
+    }
+  }
+}
+
+// フィルターが開かれた時に現在のフィルター値を読み込む
+watch(isFilterOpen, async (newValue) => {
+  if (newValue) {
+    console.log('FilterView opened, loading current filter...');
+    await nextTick()
+    await loadCurrentFilter()
+  }
+})
+
 // コンポーネントマウント時の処理
-onMounted(() => {
-  // 必要に応じて初期化処理
+onMounted(async () => {
+  await loadCurrentFilter()
 })
 </script>

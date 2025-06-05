@@ -10,6 +10,9 @@ export const getters = {
 
   // 現在の画像を取得
   getCurrentImage: (state: TStoreState) => state.currentImage,
+
+  // 現在のフィルタクエリを取得
+  getCurrentFilter: (state: TStoreState) => state.currentFilter,
   
   // 現在のフォルダIdを取得
   getCurrentFolderId: (state: TStoreState) => state.currentFolderId,

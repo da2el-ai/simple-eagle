@@ -59,12 +59,26 @@ const store = useMainStore();
 const route = useRoute();
 const router = useRouter();
 
-const loadImages = async (folderId:string) => {
+const loadImages = async (folderId: string, searchParams?: any) => {
   if ( folderId === store.getCurrentFolderId ) return;
 
   // console.log("Loading images for folder:", folderId, store.getCurrentFolderId);
   store.setCurrentFolderId(folderId as string);
-  await eagleApi.loadImages(100, folderId);
+  if (searchParams) {
+    // 検索パラメーターがある場合
+    await eagleApi.loadImages(
+      200, // limit
+      folderId, // folderId
+      0, // offset
+      searchParams.orderBy, // orderBy
+      searchParams.keyword, // keyword
+      searchParams.ext, // ext
+      searchParams.tags // tags
+    );
+  } else {
+    // 通常のフォルダー表示
+    await eagleApi.loadImages(200, folderId);
+  }
 }
 
 // フィルターを表示
@@ -74,15 +88,40 @@ const showFilter = () => {
 
 // URLが変更されたらstoreに反映
 watch(
-  [() => route.params.folderId, () => route.params.imageId],
-  async ([folderId, imageId], [prevFolderId, prevImageId]) => {
-    // console.log("Folder ID from URL:", folderId);
+  [() => route.params.folderId, () => route.params.imageId, () => route.name, () => route.query],
+  async ([folderId, imageId, routeName, query], [prevFolderId, prevImageId, prevRouteName, prevQuery]) => {
+    console.log("[App.vue] Folder ID from URL:", folderId);
+    console.log("Route name:", routeName);
+    console.log("Query parameters:", query);
+    // console.log("Query parameters Old:", prevQuery);
+
     folderId = folderId as string || "all";
 
-    // フォルダーの変更
+    // フォルダーまたは検索条件の変更
     if ( folderId !== prevFolderId ) {
-      // console.log("Changing folder to:", folderId);
-      loadImages(folderId as string);
+      console.log("Loading images for:", { folderId });
+      // 通常のフォルダールートの場合
+      loadImages(folderId);
+    }
+
+
+    // フィルタ条件を sotre に設定
+    if(routeName === 'filter' || routeName === 'filterDetail') {
+      if ( JSON.stringify(query) !== JSON.stringify(prevQuery) ) {
+        const stars = query.stars ? (Array.isArray(query.stars) ? query.stars.map(Number) : [Number(query.stars)]) : [];
+        const exts = query.exts ? (Array.isArray(query.exts) ? query.exts.filter(Boolean) as string[] : [query.exts].filter(Boolean) as string[]) : [];
+        const tags = query.tags ? (Array.isArray(query.tags) ? query.tags.filter(Boolean) as string[] : [query.tags].filter(Boolean) as string[]) : [];
+
+        store.setCurrentFilter({
+          stars,
+          exts,
+          keyword: query.keyword as string || '',
+          tags
+        });
+        console.log("Filter applied:", store.getCurrentFilter);
+      }
+    } else {
+      store.setCurrentFilter(null);
     }
 
     if (imageId !== prevImageId && imageId && typeof imageId === 'string') {

@@ -27,3 +27,19 @@ export type TImageItem = {
   lastModified: number
   star?: number
 }
+
+// export type TQueryParam = {
+//   stars?: number[],
+//   offset?: number;
+//   orderBy?: string;
+//   keyword?: string;
+//   ext?: string[];
+//   tags?: string;
+// }
+
+export type TFilter = {
+  stars?: number[],
+  exts?: string[];
+  keyword?: string;
+  tags?: string[];
+}
