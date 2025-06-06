@@ -49,6 +49,7 @@ import Breadcrumb from './components/Breadcrumb.vue';
 import { useEagleApi } from './composables/useEagleApi';
 import { useMainStore } from './store';
 import { useRoute, useRouter } from 'vue-router';
+import { ITEM_GET_COUNT } from './env';
 
 // モーダルの表示状態
 const showFolderList = ref(false);
@@ -59,26 +60,36 @@ const store = useMainStore();
 const route = useRoute();
 const router = useRouter();
 
-const loadImages = async (folderId: string, searchParams?: any) => {
+const loadImages = async (folderId: string, /*searchParams?: any*/) => {
   if ( folderId === store.getCurrentFolderId ) return;
 
-  // console.log("Loading images for folder:", folderId, store.getCurrentFolderId);
+  console.log("[App.vue] Loading images:", folderId, store.getCurrentFolderId);
   store.setCurrentFolderId(folderId as string);
-  if (searchParams) {
-    // 検索パラメーターがある場合
-    await eagleApi.loadImages(
-      200, // limit
-      folderId, // folderId
-      0, // offset
-      searchParams.orderBy, // orderBy
-      searchParams.keyword, // keyword
-      searchParams.ext, // ext
-      searchParams.tags // tags
-    );
-  } else {
-    // 通常のフォルダー表示
-    await eagleApi.loadImages(200, folderId);
-  }
+
+  // 検索パラメーターは現状使っていないので通常呼び出しのみ
+  await eagleApi.loadImagesInfinite({
+    folderId,
+    limit: ITEM_GET_COUNT,
+    offset: 0,
+  });
+
+  // if (searchParams) {
+  //   // 検索パラメーターがある場合
+  //   await eagleApi.loadImagesInfinite({
+  //     folderId,
+  //     limit: 400,
+  //     orderBy: searchParams.orderBy,
+  //     keyword: searchParams.keyword,
+  //     ext: searchParams.ext,
+  //     tags: searchParams.tags
+  //   });
+  // } else {
+  //   // 通常のフォルダー表示
+  //   await eagleApi.loadImagesInfinite({
+  //     folderId,
+  //     limit: 400
+  //   });
+  // }
 }
 
 // フィルターを表示

@@ -6,6 +6,11 @@ export const actions = {
   setImages(this: TStoreState, images: TImageItem[]) {
     this.images = images;
   },
+
+  // 画像一覧に追加（無限スクロール用）
+  addImages(this: TStoreState, images: TImageItem[]) {
+    this.images.push(...images);
+  },
   
   // フォルダ一覧を設定
   setFolders(this: TStoreState, folders: TFolderItem[]) {
@@ -17,7 +22,12 @@ export const actions = {
     const image = this.images.find((img: TImageItem) => img.id === imageId);
     this.currentImage = image || null;
   },
-  
+
+  // ページカウントを追加
+  addCurrentPageCount(this: TStoreState) {
+    this.currentPageCount += 1;
+  },
+
   // 現在のフィルタクエリを設定
   setCurrentFilter(this: TStoreState, filter: TFilter | null) {
     this.currentFilter = filter;

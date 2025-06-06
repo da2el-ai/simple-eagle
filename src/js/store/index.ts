@@ -11,6 +11,7 @@ export type TStoreState = {
   currentImage: TImageItem | null
   currentFolderId: string | null
   currentFilter: TFilter | null // 現在の検索クエリ
+  currentPageCount: number // 取得したページ数
   expandedFolders: string[]
   extList: string[]  // 拡張子リスト
   isSettingOpen: boolean // 設定画面の開閉状態
@@ -24,6 +25,7 @@ export const useMainStore = defineStore('main', {
     currentImage: null,
     currentFolderId: null,
     currentFilter: null,
+    currentPageCount: 0,
     expandedFolders: [],
     extList: [],
     isSettingOpen: false,

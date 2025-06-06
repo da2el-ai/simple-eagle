@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { API_BASE_URL } from '../env'
+import { API_BASE_URL, ITEM_GET_COUNT } from '../env'
 import type { TFolderItem, TImageItem } from '../types'
 import { useMainStore } from '../store'
 
@@ -28,20 +28,26 @@ class EagleApi {
   }
 
   /**
-   * 画像一覧を取得して内部に保存
-   * @param limit 
-   * @param folderId 
+   * 画像一覧を取得
    */
-  public async loadImages(
-    limit: number = 200, 
-    folderId: string = 'all',
-    offset: number = 0,
-    orderBy?: string,
-    keyword?: string,
-    ext?: string,
-    tags?: string
-  ): Promise<void> {
-    this.isImagesLoading.value = true
+  public async loadImages(params: {
+    folderId?: string;
+    limit?: number;
+    offset?: number;
+    orderBy?: string;
+    keyword?: string;
+    ext?: string;
+    tags?: string;
+  } = {}): Promise<TImageItem[]> {
+    const {
+      folderId = 'all',
+      limit = 200,
+      offset = 0,
+      orderBy,
+      keyword,
+      ext,
+      tags
+    } = params;
     this.error.value = null
     // console.log('//////[useEagleApi] loadImages', folderId);
 
@@ -82,29 +88,91 @@ class EagleApi {
 
       if (!data.data) {
         console.warn('No data field in response:', data)
-        this.store.setImages([])
-        return;
+        return []
       }
-      // console.log('Number of images received:', data.data.length)
-      this.store.setImages(data.data || [])
-
-      // 拡張子リストを更新
-      const extSet = new Set<string>()
-      this.store.getImages.forEach((img:TImageItem) => {
-        if (img.ext) {
-          extSet.add(img.ext.toLowerCase())
-        }
-      })
-
-      this.store.setExtList(Array.from(extSet));
+      console.log('Number of images received:', data.data.length)
+      return data.data || []
 
     } catch (err) {
       console.error('Error in loadImages:', err)
       this.error.value = err instanceof Error ? err.message : 'Unknown error occurred'
-      this.store.setImages([])
-    } finally {
-      this.isImagesLoading.value = false
+      return []
     }
+  }
+
+  /**
+   * 無限スクロール用の画像一覧取得
+   */
+  public async loadImagesInfinite(params: {
+    folderId?: string;
+    limit?: number;
+    offset?: number;
+    orderBy?: string;
+    keyword?: string;
+    ext?: string;
+    tags?: string;
+  } = {}): Promise<void> {
+
+    console.log("ローディング開始");
+    this.isImagesLoading.value = true
+
+    const {
+      folderId = 'all',
+      limit = ITEM_GET_COUNT,
+      offset = this.store.getCurrentPageCount,
+      orderBy,
+      keyword,
+      ext,
+      tags
+    } = params;
+
+    // 初回読み込みの場合は画像をクリア
+    if (offset === 0) {
+      this.store.setImages([])
+      console.log("初回呼び出し");
+    } else {
+      console.log("2回目以降の呼び出し");
+    }
+
+    console.log('//////[useEagleApi] loadImagesInfinite', folderId, limit, offset, orderBy, keyword, ext, tags);
+
+    const images = await this.loadImages({
+      folderId,
+      limit: ITEM_GET_COUNT,
+      offset,
+      orderBy,
+      keyword,
+      ext,
+      tags
+    })
+
+    // 0件だったらこれ以上のデータは無い
+    if (images.length === 0) {
+      console.log("データ無かった", this.store.getImages.length);
+      this.isImagesLoading.value = false;
+      return;
+    }
+
+    // 以降はデータがあったときの処理
+    this.store.addImages(images)
+    this.store.addCurrentPageCount();
+
+    // 取得したデータを囲うしたり
+    if (this.store.getImages.length > 0) {
+      console.log("all images count:", this.store.getImages.length);
+
+      // 拡張子リストを更新
+      const extSet = new Set<string>()
+      this.store.getImages.forEach((img: TImageItem) => {
+        if (img.ext) {
+          extSet.add(img.ext.toLowerCase())
+        }
+      })
+      this.store.setExtList(Array.from(extSet))
+    }
+
+    console.log("ローディング解除", this.store.getImages.length);
+    this.isImagesLoading.value = false;
   }
 
   /**

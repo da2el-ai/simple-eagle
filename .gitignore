@@ -5,3 +5,5 @@ venv
 package-lock.json
 cache
 src/js/env.ts
+src/js/env.ts
+/test
