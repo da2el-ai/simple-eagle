@@ -157,9 +157,8 @@ class EagleApi {
     this.store.addImages(images)
     this.store.addCurrentPageCount();
 
-    // 取得したデータを囲うしたり
+    // 取得したデータを加工
     if (this.store.getImages.length > 0) {
-      console.log("all images count:", this.store.getImages.length);
 
       // 拡張子リストを更新
       const extSet = new Set<string>()

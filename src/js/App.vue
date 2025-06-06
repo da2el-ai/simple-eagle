@@ -101,9 +101,9 @@ const showFilter = () => {
 watch(
   [() => route.params.folderId, () => route.params.imageId, () => route.name, () => route.query],
   async ([folderId, imageId, routeName, query], [prevFolderId, prevImageId, prevRouteName, prevQuery]) => {
-    console.log("[App.vue] Folder ID from URL:", folderId);
-    console.log("Route name:", routeName);
-    console.log("Query parameters:", query);
+    console.log("[App.vue] Folder ID from URL:", folderId, routeName, query);
+    // console.log("Route name:", routeName);
+    // console.log("Query parameters:", query);
     // console.log("Query parameters Old:", prevQuery);
 
     folderId = folderId as string || "all";
@@ -129,7 +129,7 @@ watch(
           keyword: query.keyword as string || '',
           tags
         });
-        console.log("Filter applied:", store.getCurrentFilter);
+        // console.log("Filter applied:", store.getCurrentFilter);
       }
     } else {
       store.setCurrentFilter(null);
