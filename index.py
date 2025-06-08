@@ -18,6 +18,9 @@ class UpdateRequest(BaseModel):
     url: str | None = None
     star: int | None = None
 
+class MoveToTrashRequest(BaseModel):
+    itemIds: list[str]
+
 app = FastAPI()
 
 # APIルーター
@@ -108,6 +111,19 @@ async def update_item(request: UpdateRequest):
     try:
         data = request.dict(exclude_none=True)
         result = eagle_api.update_item(data["id"], data)
+        if result["status"] == "error":
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/move_to_trash")
+async def move_to_trash(request: MoveToTrashRequest):
+    """
+    指定したアイテムをゴミ箱に移動する
+    """
+    try:
+        result = eagle_api.move_to_trash(request.itemIds)
         if result["status"] == "error":
             raise HTTPException(status_code=500, detail=result["message"])
         return result

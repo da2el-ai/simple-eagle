@@ -159,4 +159,24 @@ class EagleApi:
             debug_print(f"Error updating item: {e}")
             return {"status": "error", "message": str(e)}
 
+    def move_to_trash(self, item_ids: list):
+        """
+        指定したアイテムをゴミ箱に移動する
+        Args:
+            item_ids (list): 削除する画像のIDリスト
+        """
+        try:
+            url = f'{self.base_url}/api/item/moveToTrash'
+            data = {"itemIds": item_ids}
+            
+            debug_print(f"Moving items to trash: {item_ids}")
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+            result = response.json()
+            debug_print(f"Move to trash result: {result}")
+            return result
+        except requests.exceptions.RequestException as e:
+            debug_print(f"Error moving items to trash: {e}")
+            return {"status": "error", "message": str(e)}
+
 eagle_api = EagleApi()

@@ -316,6 +316,43 @@ class EagleApi {
       throw error;
     }
   }
+
+  /**
+   * 指定したアイテムをゴミ箱に移動する
+   * @param itemIds 削除する画像のIDリスト
+   */
+  public async moveToTrash(itemIds: string[]): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/move_to_trash`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          itemIds: itemIds
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.status === 'error') {
+        throw new Error(result.message);
+      }
+
+      // 成功した場合、現在のimages配列から削除されたアイテムを除去
+      const images = this.store.getImages;
+      const updatedImages = images.filter(img => !itemIds.includes(img.id));
+      this.store.setImages(updatedImages);
+
+      return result;
+    } catch (error) {
+      console.error('Error moving items to trash:', error);
+      throw error;
+    }
+  }
 }
 
 export const useEagleApi = () => {

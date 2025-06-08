@@ -21,58 +21,65 @@
 
       <Dialog :showCloseButton="false" v-if="image">
         <!-- 画像情報パネル -->
-        <div>
-          <!-- 評価 -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">評価</label>
-            <StarRating v-model="currentRating" @change="updateRating" />
-          </div>
+        <!-- 評価 -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">評価</label>
+          <StarRating v-model="currentRating" @change="updateRating" />
+        </div>
 
-          <!-- 画像名 -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">ファイル名</label>
-            <p class="text-sm text-gray-900">{{ image.name }}</p>
-          </div>
+        <!-- 画像名 -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">ファイル名</label>
+          <p class="text-sm text-gray-900">{{ image.name }}</p>
+        </div>
 
-          <!-- フォルダ -->
-          <div class="mb-4" v-if="image.folders && image.folders.length > 0">
-            <label class="block text-sm font-medium text-gray-700 mb-1">フォルダ</label>
-            <div class="flex flex-wrap gap-1">
-              <span v-for="folder in image.folders" :key="folder"
-                class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                {{ folder }}
-              </span>
-            </div>
-          </div>
-
-          <!-- タグ -->
-          <div class="mb-4" v-if="image.tags && image.tags.length > 0">
-            <label class="block text-sm font-medium text-gray-700 mb-1">タグ</label>
-            <div class="flex flex-wrap gap-1">
-              <span v-for="tag in image.tags" :key="tag"
-                class="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                {{ tag }}
-              </span>
-            </div>
-          </div>
-
-          <!-- 注釈 -->
-          <div class="mb-4" v-if="image.annotation">
-            <label class="block text-sm font-medium text-gray-700 mb-1">注釈</label>
-            <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ image.annotation }}</p>
-          </div>
-
-          <!-- ファイル情報 -->
-          <div class="mb-4">
-            <div class="text-sm text-gray-600 space-y-1">
-              <div>サイズ: {{ formatFileSize(image.size) }}</div>
-              <div>形式: {{ image.ext.toUpperCase() }}</div>
-              <div>解像度: {{ image.width }} × {{ image.height }}px</div>
-              <div>更新日時: {{ formatDate(image.modificationTime) }}</div>
-              <div>最終変更: {{ formatDate(image.lastModified) }}</div>
-            </div>
+        <!-- フォルダ -->
+        <div class="mb-4" v-if="image.folders && image.folders.length > 0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">フォルダ</label>
+          <div class="flex flex-wrap gap-1">
+            <span v-for="folder in image.folders" :key="folder"
+              class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+              {{ folder }}
+            </span>
           </div>
         </div>
+
+        <!-- タグ -->
+        <div class="mb-4" v-if="image.tags && image.tags.length > 0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">タグ</label>
+          <div class="flex flex-wrap gap-1">
+            <span v-for="tag in image.tags" :key="tag"
+              class="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+              {{ tag }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 注釈 -->
+        <div class="mb-4" v-if="image.annotation">
+          <label class="block text-sm font-medium text-gray-700 mb-1">注釈</label>
+          <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ image.annotation }}</p>
+        </div>
+
+        <!-- ファイル情報 -->
+        <div class="mb-4">
+          <div class="text-sm text-gray-600 space-y-1">
+            <div>サイズ: {{ formatFileSize(image.size) }}</div>
+            <div>形式: {{ image.ext.toUpperCase() }}</div>
+            <div>解像度: {{ image.width }} × {{ image.height }}px</div>
+            <div>更新日時: {{ formatDate(image.modificationTime) }}</div>
+            <div>最終変更: {{ formatDate(image.lastModified) }}</div>
+          </div>
+        </div>
+
+        <!-- ファイル削除 -->
+        <div class="flex justify-end">
+          <TrashButton 
+            @click="moveToTrash" 
+            :style="{ opacity: isDeleting ? 0.5 : 1, pointerEvents: isDeleting ? 'none' : 'auto' }"
+          />
+        </div>
+
       </Dialog>
     </section>
   </ModalView>
@@ -88,6 +95,7 @@ import { useMainStore } from '../store';
 import ModalView from './common/ModalView.vue';
 import Dialog from './common/Dialog.vue';
 import StarRating from './common/StarRating.vue';
+import TrashButton from './common/TrashButton.vue';
 import { formatFileSize, formatDate } from '../modules/util';
 
 const router = useRouter()
@@ -138,6 +146,9 @@ const closeLightbox = () => {
 // 評価の状態管理
 const currentRating = ref(image.value?.star || 0)
 
+// 削除中フラグ
+const isDeleting = ref(false)
+
 // 評価値の更新とAPI呼び出し
 const updateRating = async (rating: number) => {
   if (!image.value) return
@@ -152,6 +163,29 @@ const updateRating = async (rating: number) => {
     console.error('評価の更新に失敗しました:', error)
   }
 }
+
+// ファイルをゴミ箱に移動
+const moveToTrash = async () => {
+  if (!image.value || isDeleting.value) return
+
+  // 削除確認ダイアログ
+  const confirmed = window.confirm(`「${image.value.name}」をゴミ箱に移動しますか？`)
+  if (!confirmed) return
+
+  isDeleting.value = true
+
+  try {
+    await eagleApi.moveToTrash([image.value.id])
+    
+    // 成功時はLightboxを閉じる
+    closeLightbox()
+  } catch (error) {
+    console.error('ファイルの削除に失敗しました:', error)
+    window.alert('ファイルの削除に失敗しました。')
+  } finally {
+    isDeleting.value = false
+  }
+};
 
 // 画像が変更されたときに評価値を更新
 watch(() => image.value, (newImage) => {

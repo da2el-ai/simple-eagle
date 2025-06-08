@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import {ref, computed, watch} from 'vue';
 import StarButton from './StarButton.vue';
-import TrashButton from './TrashButton.vue';
+import TrashButton from '../common/TrashButton.vue';
 import StarRating from '../common/StarRating.vue';
 import { useMainStore } from '../../store';
 import { useEagleApi } from '../../composables/useEagleApi';
