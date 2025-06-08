@@ -148,6 +148,10 @@ class EagleApi:
         try:
             url = f'{self.base_url}/api/item/update'
             data['id'] = item_id
+
+            if 'star' in data and isinstance(data['star'], (int, float)):
+                data['star'] = str(data['star'])
+
             response = requests.post(url, json=data)
             response.raise_for_status()
             return response.json()
