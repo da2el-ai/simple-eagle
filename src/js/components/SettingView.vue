@@ -70,8 +70,8 @@ import { onMounted, computed } from 'vue';
 // import { useRouter } from 'vue-router';
 import { useSettings } from '../composables/useSettings';
 import { useMainStore } from '../store';
-import ModalView from './ModalView.vue';
-import Dialog from './Dialog.vue';
+import ModalView from './common/ModalView.vue';
+import Dialog from './common/Dialog.vue';
 
 // 設定管理のコンポーザブルを使用
 const { settings, saveSettings, initialize } = useSettings()

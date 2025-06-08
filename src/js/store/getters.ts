@@ -11,6 +11,9 @@ export const getters = {
   // 現在の画像を取得
   getCurrentImage: (state: TStoreState) => state.currentImage,
 
+  // 選択状態の画像を取得
+  getSelectedImages: (state: TStoreState) => state.images.filter(image => image.select),
+
   // 現在のフィルタクエリを取得
   getCurrentFilter: (state: TStoreState) => state.currentFilter,
 
@@ -110,9 +113,14 @@ export const getters = {
   getExtList: (state: TStoreState) => state.extList,
 
   // 設定画面の開閉状態を取得
+  getSelectMode: (state: TStoreState) => state.isSelectMode,
+
+  // 設定画面の開閉状態を取得
   getSettingOpen: (state: TStoreState) => state.isSettingOpen,
 
   // フィルター画面の開閉状態を取得
   getFilterOpen: (state: TStoreState) => state.isFilterOpen,
 
+  // フォルダーリストの開閉状態を取得
+  getFolderListOpen: (state: TStoreState) => state.isFolderListOpen,
 }

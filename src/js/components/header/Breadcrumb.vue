@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useMainStore } from '../store';
+import { useMainStore } from '../../store';
 import { useRouter } from 'vue-router';
 
 const store = useMainStore();

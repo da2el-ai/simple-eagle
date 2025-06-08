@@ -58,6 +58,27 @@ export const actions = {
     this.extList = extList;
   },
 
+  // 複数選択モードを設定
+  setSelectMode(this: TStoreState, isSelect: boolean) {
+    this.isSelectMode = isSelect;
+  },
+  // 複数選択モードを設定
+  toggleSelectMode(this: TStoreState) {
+    this.isSelectMode = !this.isSelectMode;
+    // 選択モードを切り替える時に全ての選択状態をリセット
+    this.images.forEach(image => {
+      image.select = false;
+    });
+  },
+
+  // 画像の選択状態を切り替え
+  toggleImageSelect(this: TStoreState, imageId: string) {
+    const image = this.images.find(img => img.id === imageId);
+    if (image) {
+      image.select = !image.select;
+    }
+  },
+
   // 設定画面の開閉状態を設定
   setSettingOpen(this: TStoreState, isOpen: boolean) {
     this.isSettingOpen = isOpen;
@@ -66,5 +87,10 @@ export const actions = {
   // フィルター画面の開閉状態を設定
   setFilterOpen(this: TStoreState, isOpen: boolean) {
     this.isFilterOpen = isOpen;
+  },
+
+  // フォルダーリストの開閉状態を設定
+  setFolderListOpen(this: TStoreState, isOpen: boolean) {
+    this.isFolderListOpen = isOpen;
   },
 }

@@ -1,35 +1,22 @@
 <template>
-  <div class="container mx-auto p-4">
-    <header class="flex flex-wrap justify-between items-center mb-4 z-10 bg-white sticky top-0">
-      <div class="flex items-center gap-4">
-        <!-- フォルダビュー表示ボタン -->
-        <HamburgerButton @click="showFolderList = true" />
-
-        <!-- タイトル -->
-        <h1 class="text-2xl font-bold">Simple Eagle</h1>
-      </div>
-
-      <!-- ツール系ボタン -->
-      <div class="flex item-center justify-end gap-4">
-        <!-- フィルターボタン -->
-        <FilterButton @click="showFilter" />
-        <!-- 選択ボタンをここに追加 -->
-      </div>
-
-      <Breadcrumb />
-    </header>
+  <div class="container mx-auto pl-4 pr-4 pb-4">
+    <!-- ヘッダーバー -->
+    <Header />
 
     <!-- 画像一覧表示 -->
     <ImageListView />
     
     <!-- フォルダー一覧モーダル -->
-    <FolderTreeView v-model:isOpen="showFolderList" />
+    <FolderTreeView />
 
     <!-- 設定画面 -->
     <SettingView />
 
     <!-- フィルター条件設定モーダル -->
     <FilterView />
+
+    <!-- 選択モードで使用するアクション -->
+    <ActionView />
 
     <!-- ルータービュー -->
     <router-view />
@@ -38,21 +25,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
-import ImageListView from './components/ImageListView.vue';
-import HamburgerButton from './components/HamburgerButton.vue';
-import FolderTreeView from './components/FolderTreeView.vue';
+import { watch, onMounted } from 'vue';
+import ImageListView from './components/imageList/ImageListView.vue';
+import Header from './components/header/Header.vue';
+import FolderTreeView from './components/folderTree/FolderTreeView.vue';
 import SettingView from './components/SettingView.vue'
-import FilterButton from './components/FilterButton.vue';
 import FilterView from './components/FilterView.vue';
-import Breadcrumb from './components/Breadcrumb.vue';
+import ActionView from './components/action/ActionView.vue';
 import { useEagleApi } from './composables/useEagleApi';
 import { useMainStore } from './store';
 import { useRoute, useRouter } from 'vue-router';
 import { ITEM_GET_COUNT } from './env';
-
-// モーダルの表示状態
-const showFolderList = ref(false);
 
 // サービスの取得
 const eagleApi = useEagleApi();
@@ -90,11 +73,6 @@ const loadImages = async (folderId: string, /*searchParams?: any*/) => {
   //     limit: 400
   //   });
   // }
-}
-
-// フィルターを表示
-const showFilter = () => {
-  store.setFilterOpen(true);
 }
 
 // URLが変更されたらstoreに反映

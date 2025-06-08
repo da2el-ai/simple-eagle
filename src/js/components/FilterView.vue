@@ -108,8 +108,8 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMainStore } from '../store';
-import ModalView from './ModalView.vue';
-import Dialog from './Dialog.vue';
+import ModalView from './common/ModalView.vue';
+import Dialog from './common/Dialog.vue';
 import { TFilter } from '../types';
 
 const store = useMainStore()

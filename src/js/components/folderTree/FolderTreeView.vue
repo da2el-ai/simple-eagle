@@ -1,5 +1,5 @@
 <template>
-  <ModalView v-if="isOpen" :showCloseButton="false" @close="handleClose" :fit-width="true">
+  <ModalView v-if="isModalOpen" :showCloseButton="false" @close="handleClose" :fit-width="true">
     <div class="fixed left-0 top-0 w-[min(80vw,20rem)] h-full bg-white shadow-lg overflow-y-auto">
       <div class="p-4">
 
@@ -30,24 +30,18 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useEagleApi } from '../composables/useEagleApi'
+import { useEagleApi } from '../../composables/useEagleApi'
 import { useRouter } from 'vue-router'
-import { useMainStore } from '../store'
-import ModalView from './ModalView.vue'
+import { useMainStore } from '../../store'
+import ModalView from '../common/ModalView.vue'
 import FolderTreeItem from './FolderTreeItem.vue'
 import SettingButton from './SettingButton.vue'
 
-defineProps<{
-  isOpen: boolean
-}>()
-
-const emit = defineEmits<{
-  (e: 'update:isOpen', value: boolean): void
-}>()
+const store = useMainStore();
+const isModalOpen = computed(() => store.getFolderListOpen);
 
 const eagleApi = useEagleApi();
 const router = useRouter();
-const store = useMainStore();
 
 // Piniaストアからフォルダーを取得
 const folders = computed(() => store.getFolders);
@@ -56,14 +50,14 @@ const error = eagleApi.getError();
 
 // フォルダー一覧を閉じる
 const handleClose = () => {
-  emit('update:isOpen', false);
+  store.setFolderListOpen(false);
 }
 
 // フォルダーを選択
 const handleFolderSelect = (folderId: string) => {
   // store.setCurrentFolder(folderId);
   router.push({ name: 'folder', params: { folderId } });
-  emit('update:isOpen', false);
+  store.setFolderListOpen(false);
 }
 
 // 設定を開く

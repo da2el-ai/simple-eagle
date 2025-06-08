@@ -16,6 +16,13 @@
       />
 
       <span class="c-badge" :data-clickable="isClickableImage(props.image) ? 'true' : 'false'">{{ props.image.ext.toUpperCase() }}</span>
+
+      <!-- 選択状態マーカー -->
+      <div v-if="props.image.select" class="c-select-mark">
+        <svg id="_レイヤー_1" data-name="レイヤー 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4.2 3.2" width="70%" height="70%" fill="white">
+          <path class="cls-1" d="m1.6,3.2c-.15,0-.31-.06-.42-.18L.18,2.02C-.06,1.79-.06,1.41.18,1.18c.23-.23.61-.23.85,0l.58.58L3.18.18c.23-.23.61-.23.85,0,.23.23.23.61,0,.85l-2,2c-.12.12-.27.18-.42.18Z"/>
+        </svg>
+      </div>
     </div>
 
     <div class="py-1">
@@ -27,10 +34,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSettings } from '../composables/useSettings'
-import { useMainStore } from '../store'
-import { API_BASE_URL } from '../env'
-import type { TImageItem } from '../types'
+import { useSettings } from '../../composables/useSettings'
+import { useMainStore } from '../../store'
+import { API_BASE_URL } from '../../env'
+import type { TImageItem } from '../../types'
 import StarRatingMini from './StarRatingMini.vue'
 
 interface Props {
@@ -61,7 +68,13 @@ const isClickableImage = (image: TImageItem): boolean => {
 
 // 画像クリック時の処理
 const handleImageClick = (image: TImageItem) => {
-  router.push(`/folder/${currentFolder.value?.id || 'all'}/detail/${image.id}`)
+  if (store.getSelectMode) {
+    // 選択モードの場合は選択状態を切り替え
+    store.toggleImageSelect(image.id)
+  } else {
+    // 通常モードの場合はLightboxを開く
+    router.push(`/folder/${currentFolder.value?.id || 'all'}/detail/${image.id}`)
+  }
 }
 
 const handleImageError = (image: TImageItem) => {

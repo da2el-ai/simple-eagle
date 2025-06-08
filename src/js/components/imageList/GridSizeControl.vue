@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useSettings } from '../composables/useSettings';
+import { useSettings } from '../../composables/useSettings';
 
 const settings = useSettings()
 const gridSize = computed(() => settings.getGridSize())

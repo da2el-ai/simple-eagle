@@ -26,6 +26,7 @@ export type TImageItem = {
   modificationTime: number
   lastModified: number
   star?: number
+  select?: boolean
 }
 
 // export type TQueryParam = {

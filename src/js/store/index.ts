@@ -14,8 +14,10 @@ export type TStoreState = {
   currentPageCount: number // 取得したページ数
   expandedFolders: string[]
   extList: string[]  // 拡張子リスト
+  isSelectMode: boolean // 複数選択モード
   isSettingOpen: boolean // 設定画面の開閉状態
   isFilterOpen: boolean // フィルター画面の開閉状態
+  isFolderListOpen: boolean // フォルダーリストの開閉状態
 }
 
 export const useMainStore = defineStore('main', {
@@ -28,8 +30,10 @@ export const useMainStore = defineStore('main', {
     currentPageCount: 0,
     expandedFolders: [],
     extList: [],
+    isSelectMode: false,
     isSettingOpen: false,
     isFilterOpen: false,
+    isFolderListOpen: false,
   }),
 
   getters,

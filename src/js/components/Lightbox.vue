@@ -85,9 +85,9 @@ import { API_BASE_URL } from '../env';
 import { useSettings } from '../composables/useSettings';
 import { useEagleApi } from '../composables/useEagleApi';
 import { useMainStore } from '../store';
-import ModalView from './ModalView.vue';
-import Dialog from './Dialog.vue';
-import StarRating from './StarRating.vue';
+import ModalView from './common/ModalView.vue';
+import Dialog from './common/Dialog.vue';
+import StarRating from './common/StarRating.vue';
 import { formatFileSize, formatDate } from '../modules/util';
 
 const router = useRouter()

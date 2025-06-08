@@ -25,7 +25,7 @@
 <script setup lang="ts">
 // import { useMainStore } from '../store'
 import { useRouter } from 'vue-router';
-import type { TFolderItem } from '../types'
+import type { TFolderItem } from '../../types'
 
 // const store = useMainStore()
 const router = useRouter();
