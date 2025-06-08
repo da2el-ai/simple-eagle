@@ -49,6 +49,14 @@ class EagleApi:
                     debug_print(f"DEBUG MODE: Limiting results to {DEBUG_LIMIT} items")
                     data['data'] = data['data'][:DEBUG_LIMIT]
                 debug_print(f"Processing {len(data['data'])} items")
+                
+                # starプロパティをintに変換
+                for item in data['data']:
+                    if 'star' in item:
+                        try:
+                            item['star'] = int(item['star']) if item['star'] is not None else 0
+                        except (ValueError, TypeError):
+                            item['star'] = 0
             else:
                 debug_print("Unexpected data structure:", data)
 
