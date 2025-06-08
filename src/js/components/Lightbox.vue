@@ -37,10 +37,14 @@
         <div class="mb-4" v-if="image.folders && image.folders.length > 0">
           <label class="block text-sm font-medium text-gray-700 mb-1">フォルダ</label>
           <div class="flex flex-wrap gap-1">
-            <span v-for="folder in image.folders" :key="folder"
-              class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-              {{ folder }}
-            </span>
+            <button 
+              v-for="folderId in image.folders" 
+              :key="folderId"
+              @click="navigateToFolder(folderId)"
+              class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 cursor-pointer transition-colors"
+            >
+              {{ getFolderName(folderId) }}
+            </button>
           </div>
         </div>
 
@@ -163,6 +167,28 @@ const updateRating = async (rating: number) => {
     console.error('評価の更新に失敗しました:', error)
   }
 }
+
+// フォルダIDからフォルダ名を取得
+const getFolderName = (folderId: string): string => {
+  const findFolder = (folders: any[], id: string): any => {
+    for (const folder of folders) {
+      if (folder.id === id) return folder;
+      if (folder.children) {
+        const found = findFolder(folder.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  
+  const folder = findFolder(store.getFolders, folderId);
+  return folder ? folder.name : folderId;
+};
+
+// フォルダに移動
+const navigateToFolder = (folderId: string) => {
+  router.push({ name: 'folder', params: { folderId } });
+};
 
 // ファイルをゴミ箱に移動
 const moveToTrash = async () => {
