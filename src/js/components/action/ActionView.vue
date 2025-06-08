@@ -30,8 +30,15 @@
           削除しますか？
 
           <div class="flex items-center justify-end grow gap-4">
-            <button class="btn-primary">実行</button>
-            <button @click="actionMode = null" class="btn-cancel">キャンセル</button>
+            <button 
+              @click="executeDelete" 
+              class="btn-primary" 
+              :disabled="isDeleting"
+              :style="{ opacity: isDeleting ? 0.5 : 1 }"
+            >
+              {{ isDeleting ? '実行中...' : '実行' }}
+            </button>
+            <button @click="actionMode = null" class="btn-cancel" :disabled="isDeleting">キャンセル</button>
           </div>
         </div>
 
@@ -64,6 +71,9 @@ const rating = ref(0);
 
 // 更新中フラグ
 const isUpdating = ref(false);
+
+// 削除中フラグ
+const isDeleting = ref(false);
 
 // 選択個数
 const selectedCount = computed(() => 
@@ -131,6 +141,42 @@ const executeRatingUpdate = async () => {
     alert('レーティングの更新に失敗しました。元の値に復元されました。');
   } finally {
     isUpdating.value = false;
+  }
+};
+
+/**
+ * 削除を実行
+ */
+const executeDelete = async () => {
+  if (isDeleting.value) return;
+  
+  // 選択された画像を取得
+  const selectedImages = store.getSelectedImages;
+  if (selectedImages.length === 0) {
+    alert('画像が選択されていません');
+    return;
+  }
+
+  isDeleting.value = true;
+
+  try {
+    // 選択された画像のIDリストを作成
+    const itemIds = selectedImages.map(image => image.id);
+    
+    // ゴミ箱に移動
+    await eagleApi.moveToTrash(itemIds);
+    
+    // 成功時の処理
+    console.log(`${selectedImages.length}個の画像を削除しました`);
+    
+    // アクションモードを終了
+    actionMode.value = null;
+    
+  } catch (error) {
+    console.error('ファイルの削除に失敗しました:', error);
+    window.alert('ファイルの削除に失敗しました。');
+  } finally {
+    isDeleting.value = false;
   }
 };
 
