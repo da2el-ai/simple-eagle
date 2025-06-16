@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 import base64
 import os
@@ -22,6 +23,8 @@ class MoveToTrashRequest(BaseModel):
     itemIds: list[str]
 
 app = FastAPI()
+# GZip圧縮を有効化
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # APIルーター
 from fastapi import APIRouter
