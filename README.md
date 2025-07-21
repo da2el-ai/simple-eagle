@@ -1,4 +1,4 @@
-# ComfyUI Simple Interface
+# Simple Eagle
 
 画像管理ソフトのEagleをスマホから見たくて作成したシンプルなインターフェースです。
 
